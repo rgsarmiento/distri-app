@@ -17,15 +17,15 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        $this->call(CompanySeeder::class);
-        $this->call(RoleSeeder::class);
-        $this->call(ProductSeeder::class);
-        $this->call(CustomerDetailSeeder::class);
+        //$this->call(CompanySeeder::class);
+        //$this->call(RoleSeeder::class);
+        //$this->call(ProductSeeder::class);
+        //$this->call(CustomerDetailSeeder::class);
 
         User::factory()->create([
             'name' => 'Administrador',
             'email' => 'admin@nodo.com',
-            'password' => Hash::make('admin@nodo.com'),
+            'password' => Hash::make('n0d02024'),
             'role_id'=> 1,
             'company_id' => 1,
         ]);
