@@ -53,7 +53,7 @@
                     </svg>
                     Excel
                 </button>
-                <button type="submit" onclick="this.form.action='{{ route('reports.orders.pdf') }}'; this.form.target='_blank';" class="btn-primary" style="background:linear-gradient(135deg,#DC2626,#EF4444);box-shadow:0 3px 12px rgba(220,38,38,0.3);">
+                <button type="submit" onclick="this.form.action='{{ route('reports.orders.pdf') }}'; this.form.target='_self';" class="btn-primary" style="background:linear-gradient(135deg,#DC2626,#EF4444);box-shadow:0 3px 12px rgba(220,38,38,0.3);">
                     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                     </svg>

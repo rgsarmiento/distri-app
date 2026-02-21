@@ -96,7 +96,7 @@
                     <tr onclick="window.location='{{ route('orders.show', $order) }}'" style="cursor:pointer;">
                         <td style="text-align:center;" onclick="event.stopPropagation()">
                             <div style="display:flex;gap:4px;justify-content:center;">
-                                <a href="{{ route('orders.invoice', $order->id) }}" target="_blank" class="btn-primary" style="padding:4px 8px;font-size:10px;background:#6C3DE0;" title="Imprimir Ticket">
+                                <a href="{{ route('orders.invoice', $order->id) }}" class="btn-primary" style="padding:4px 8px;font-size:10px;background:#6C3DE0;" title="Imprimir Ticket">
                                     🖨️
                                 </a>
                                 @if($order->status === 'pendiente')
@@ -137,7 +137,7 @@
                             <div style="display:flex;gap:6px;justify-content:center;">
                                 <a href="{{ route('reports.order.pdf', $order->id) }}"
                                    class="btn-secondary" style="padding:6px 10px;font-size:11px;"
-                                   target="_blank" title="Ver PDF">
+                                   title="Ver PDF">
                                     📄 PDF
                                 </a>
                                 @if($order->status === 'pendiente')
