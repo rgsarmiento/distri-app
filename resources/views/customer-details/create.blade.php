@@ -53,6 +53,7 @@
                     </div>
 
                     <!-- Companies -->
+                    @if(auth()->user()->role_id === 1)
                     <div class="mt-4">
                         <x-input-label for="company_id" :value="__('Compañía')" />
                         <select id="company_id" name="company_id"
@@ -68,6 +69,7 @@
                         </select>
                         <x-input-error :messages="$errors->get('company_id')" class="mt-2" />
                     </div>
+                    @endif
 
                     <div class="flex items-center justify-center md:justify-end mt-4">
                         <x-primary-button type="submit" class="ml-4">

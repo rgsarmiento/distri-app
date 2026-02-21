@@ -44,6 +44,7 @@
                     </div>
 
                     <!-- Rol -->
+                    @if(auth()->user()->role_id === 1)
                     <div class="mt-4">
                         <x-input-label for="role_id" :value="__('Rol')" />
                         <select id="role_id" name="role_id"
@@ -58,8 +59,12 @@
                         </select>
                         <x-input-error :messages="$errors->get('role_id')" class="mt-2" />
                     </div>
+                    @else
+                        <input type="hidden" name="role_id" value="2">
+                    @endif
 
                     <!-- Compañía -->
+                    @if(auth()->user()->role_id === 1)
                     <div class="mt-4">
                         <x-input-label for="company_id" :value="__('Compañía')" />
                         <select id="company_id" name="company_id"
@@ -75,6 +80,9 @@
                         </select>
                         <x-input-error :messages="$errors->get('company_id')" class="mt-2" />
                     </div>
+                    @else
+                        <input type="hidden" name="company_id" value="{{ auth()->user()->company_id }}">
+                    @endif
 
                     <div class="flex items-center justify-center md:justify-end mt-4">
                         <x-primary-button type="submit" class="ml-4">

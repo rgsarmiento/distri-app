@@ -12,33 +12,53 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::with(['company', 'role'])->get();  // Cargar relaciones de compañía y rol
+        $user = auth()->user();
+        $query = User::with(['company', 'role']);
+
+        if ($user->role_id === 3) {
+            $query->where('company_id', $user->company_id);
+        } elseif ($user->role_id !== 1) {
+            abort(403);
+        }
+
+        $users = $query->get();
         return view('users.index', compact('users'));
     }
 
     public function create()
     {
-        $companies = Company::all();  // Obtener todas las compañías para el dropdown
-        $roles = Role::all();  // Obtener todos los roles
-        return view('users.create', compact('companies', 'roles'));
+        $user = auth()->user();
+        if ($user->role_id === 3) {
+            $companies = Company::where('id', $user->company_id)->get();
+            $roles = Role::where('id', 2)->get(); // Solo Distribuidor
+        } else {
+            $companies = Company::all();
+            $roles = Role::all();
+        }
+        return view('users.create', compact('companies', 'roles', 'user'));
     }
 
     public function store(Request $request)
     {
-        // Validar los datos
+        $user = auth()->user();
         $validated = $request->validate([
             'name' => 'required|unique:users,name|max:255',
             'email' => 'required|unique:users,email|email',
             'password' => 'required|min:8|confirmed',
-            'company_id' => 'required|exists:companies,id',  // Verificar que la compañía existe
-            'role_id' => 'required|exists:roles,id',  // Verificar que el rol existe
+            'company_id' => 'required|exists:companies,id',
+            'role_id' => 'required|exists:roles,id',
         ]);
 
-        // Crear un nuevo usuario
+        // Seguridad para Supervisor
+        if ($user->role_id === 3) {
+            $validated['company_id'] = $user->company_id;
+            $validated['role_id'] = 2; // Siempre Distribuidor
+        }
+
         User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),  // Hash de la contraseña
+            'password' => Hash::make($validated['password']),
             'company_id' => $validated['company_id'],
             'role_id' => $validated['role_id'],
         ]);
@@ -49,56 +69,73 @@ class UserController extends Controller
     public function show($id)
     {
         $user = User::with(['company', 'role'])->findOrFail($id);
+        $authUser = auth()->user();
+        if ($authUser->role_id === 3 && $user->company_id !== $authUser->company_id) abort(403);
+        
         return view('users.show', compact('user'));
     }
 
     public function edit($id)
     {
-        $user = User::findOrFail($id);
-        $companies = Company::all();  // Para el dropdown de compañías
-        $roles = Role::all();  // Para el dropdown de roles
-        return view('users.edit', compact('user', 'companies', 'roles'));
+        $userToEdit = User::findOrFail($id);
+        $authUser = auth()->user();
+        
+        if ($authUser->role_id === 3) {
+            if ($userToEdit->company_id !== $authUser->company_id) abort(403);
+            $companies = Company::where('id', $authUser->company_id)->get();
+            $roles = Role::where('id', 2)->get();
+        } else {
+            $companies = Company::all();
+            $roles = Role::all();
+        }
+        
+        return view('users.edit', ['user' => $userToEdit, 'companies' => $companies, 'roles' => $roles]);
     }
 
     public function update(Request $request, $id)
     {
-        // Validar los datos
+        $userToUpdate = User::findOrFail($id);
+        $authUser = auth()->user();
+        
+        if ($authUser->role_id === 3 && $userToUpdate->company_id !== $authUser->company_id) abort(403);
+
         $validated = $request->validate([
             'name' => 'required|max:255|unique:users,name,' . $id,
             'email' => 'required|email|max:255|unique:users,email,' . $id,
-            'password' => 'nullable|min:8|confirmed',  // Contraseña opcional
+            'password' => 'nullable|min:8|confirmed',
             'company_id' => 'required|exists:companies,id',
             'role_id' => 'required|exists:roles,id',
         ]);
 
-        // Buscar el usuario
-        $user = User::findOrFail($id);
+        if ($authUser->role_id === 3) {
+            $validated['company_id'] = $authUser->company_id;
+            $validated['role_id'] = 2;
+        }
 
-        // Preparar los datos para actualizar
         $dataToUpdate = [
             'name' => $validated['name'],
             'email' => $validated['email'],
             'company_id' => $validated['company_id'],
             'role_id' => $validated['role_id'],
         ];
-        // Actualizar la contraseña solo si se proporciona una nueva
 
         if (!empty($validated['password'])) {
             $dataToUpdate['password'] = Hash::make($validated['password']);
         }
 
-        // Actualizar los datos
-        $user->update($dataToUpdate);
-
+        $userToUpdate->update($dataToUpdate);
 
         return redirect()->route('users.index')->with('success', 'Usuario actualizado con éxito');
     }
 
     public function destroy($id)
     {
-        $user = User::findOrFail($id);
-        $user->delete();
-
+        $userToDelete = User::findOrFail($id);
+        $authUser = auth()->user();
+        
+        if ($authUser->role_id === 3 && $userToDelete->company_id !== $authUser->company_id) abort(403);
+        
+        $userToDelete->delete();
         return redirect()->route('users.index')->with('success', 'Usuario eliminado con éxito');
     }
 }

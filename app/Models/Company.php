@@ -16,6 +16,7 @@ class Company extends Model
         'address',
         'department',
         'municipality',
+        'alert_days',
     ];
 
     // Relación: una empresa puede tener muchos clientes
@@ -29,4 +30,8 @@ class Company extends Model
         return $this->hasMany(User::class);
     }
 
+    public function products()
+    {
+        return $this->hasMany(Product::class);
+    }
 }

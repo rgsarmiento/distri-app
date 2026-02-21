@@ -1,79 +1,73 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Usuarios') }}
-        </h2>
-    </x-slot>
+    <x-slot name="header">Gestión de Usuarios</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-                <div class="p-4 py-5 sm:px-6 flex justify-between items-center">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900">
-                        Lista de Usuarios
-                    </h3>
-                    <a href="{{ route('users.create') }}"
-                        class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-medium text-sm">Crear
-                        Nuevo Usuario</a>
-                </div>
-                <div class="border-t border-gray-200 p-4">
-                    <div class="overflow-x-auto">
-                        <table class="w-full divide-y divide-gray-200 table-auto">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th scope="col"
-                                        class="mx-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
-                                        Rol</th>
-                                    <th scope="col"
-                                        class="mx-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3">
-                                        Nombre</th>
-                                    <th scope="col"
-                                        class="mx-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3">
-                                        Email</th>
-                                    <th scope="col"
-                                        class="mx-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
-                                        Empresa</th>
-                                    <th scope="col"
-                                        class="mx-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
-                                        Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach ($users as $user)
-                                    <tr class="hover:bg-gray-100 cursor-pointer"
-                                        onclick="window.location='{{ route('users.show', $user->id) }}'">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
-                                            {{ $user->role->name }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
-                                            {{ $user->name }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
-                                            {{ $user->email }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
-                                            {{ $user->company->name }}</td>
-
-                                        <td
-                                            class="px-6 py-4 whitespace-nowrap text-sm font-medium flex space-x-2 justify-center gap-6">
-                                            <a href="{{ route('users.edit', $user->id) }}"
-                                                class="text-indigo-600 hover:bg-indigo-900">Editar</a>
-                                            <form action="{{ route('users.destroy', $user->id) }}" method="POST"
-                                                style="display:inline;">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit"
-                                                    class="text-red-600 hover:text-red-900">Eliminar</button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid #F3F4F8;">
+            <div>
+                <div style="font-size:15px;font-weight:700;color:#1E1B2E;">Usuarios del Sistema</div>
+                <div style="font-size:12px;color:#9CA3AF;margin-top:2px;">
+                    Administra los accesos de Administradores, Supervisores y Distribuidores
                 </div>
             </div>
+            <a href="{{ route('users.create') }}" class="btn-primary">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M12 5v14M5 12h14"/>
+                </svg>
+                Nuevo Usuario
+            </a>
+        </div>
+
+        <div style="overflow-x:auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Rol</th>
+                        <th>Empresa</th>
+                        <th>Email</th>
+                        <th style="text-align:center;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($users as $user)
+                    <tr>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:12px;">
+                                <div class="user-avatar-sm" style="width:34px;height:34px;font-size:13px;">
+                                    {{ strtoupper(substr($user->name, 0, 1)) }}
+                                </div>
+                                <div style="font-weight:600;color:#1E1B2E;">{{ $user->name }}</div>
+                            </div>
+                        </td>
+                        <td>
+                            @php
+                                $roleColor = match($user->role_id) {
+                                    1 => ['bg' => '#EDE9FF', 'text' => '#6C3DE0'],
+                                    3 => ['bg' => '#E0E7FF', 'text' => '#4338CA'],
+                                    default => ['bg' => '#F3F4F6', 'text' => '#4B5563'],
+                                };
+                            @endphp
+                            <span style="background: {{ $roleColor['bg'] }}; color: {{ $roleColor['text'] }}; padding:3px 10px; border-radius:6px; font-size:11.5px; font-weight:700; text-transform:uppercase;">
+                                {{ $user->role->name ?? 'N/A' }}
+                            </span>
+                        </td>
+                        <td>
+                            <div style="font-size:13px;color:#374151;">{{ $user->company->name ?? 'Sistema' }}</div>
+                        </td>
+                        <td style="color:#6B7280;font-size:13px;">{{ $user->email }}</td>
+                        <td style="text-align:center;">
+                            <div style="display:flex;gap:6px;justify-content:center;">
+                                <a href="{{ route('users.edit', $user->id) }}" class="btn-edit" style="padding:6px 14px;font-size:12px;">Editar</a>
+                                <form action="{{ route('users.destroy', $user->id) }}" method="POST" onsubmit="return confirm('¿Seguro que deseas eliminar este usuario?')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="btn-danger" style="padding:6px 14px;font-size:12px;">Eliminar</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
     </div>
-
-
-
 </x-app-layout>

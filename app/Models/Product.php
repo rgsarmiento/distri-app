@@ -13,29 +13,40 @@ class Product extends Model
         'name',
         'code',
         'base_price',
+        'base_price_1',
+        'base_price_2',
+        'base_price_3',
         'tax_rate',
         'company_id',
+        'stock',
+        'min_stock',
     ];
 
-    protected $casts = [
-        'base_price' => 'decimal:2',
-        'tax_rate' => 'decimal:2',
-    ];
-
-    public function company()
+    /**
+     * Calcula el precio con IVA incluido.
+     */
+    public function getPriceWithTax()
     {
-        return $this->belongsTo(Company::class);
+        return $this->base_price * (1 + ($this->tax_rate / 100));
+    }
+
+    /**
+     * Scope para obtener productos con stock bajo.
+     */
+    public function scopeLowStock($query)
+    {
+        return $query->whereColumn('stock', '<=', 'min_stock');
     }
 
     public function orders()
     {
         return $this->belongsToMany(Order::class, 'order_products')
-            ->withPivot('quantity', 'subtotal', 'total_tax', 'total')
-            ->withTimestamps();
+                    ->withPivot('quantity', 'subtotal', 'total_tax', 'total')
+                    ->withTimestamps();
     }
 
-    public function getPriceWithTax()
+    public function company()
     {
-        return $this->base_price * (1 + $this->tax_rate / 100);
+        return $this->belongsTo(Company::class);
     }
 }

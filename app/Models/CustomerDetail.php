@@ -25,6 +25,6 @@ class CustomerDetail extends Model
 
     public function orders()
     {
-        return $this->hasMany(Order::class); // Un cliente puede tener muchas órdenes
+        return $this->hasMany(Order::class, 'customer_id'); // Un cliente puede tener muchas órdenes
     }
 }

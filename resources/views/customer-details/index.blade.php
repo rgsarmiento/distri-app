@@ -1,86 +1,79 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Customers') }}
-        </h2>
-    </x-slot>
+    <x-slot name="header">Clientes</x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-                <div class="p-4 py-5 sm:px-6 flex justify-between items-center">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900">
-                        Lista de Clientes
-                    </h3>
-                    <a href="{{ route('customer-details.create') }}"
-                        class="bg-blue-500 hover:bg-blue-800 text-white px-4 py-2 rounded font-medium text-sm">Crear
-                        Nuevo Cliente</a>
-                </div>
-                <div class="border-t border-gray-200 p-4">
-                    <div class="overflow-x-auto">
-                        <table class="w-full divide-y divide-gray-200 table-auto">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th scope="col"
-                                        class="mx-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
-                                        Identificación</th>
-                                    <th scope="col"
-                                        class="mx-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3">
-                                        Nombre Completo</th>
-                                    <th scope="col"
-                                        class="mx-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3">
-                                        Email</th>
-                                    <th scope="col"
-                                        class="mx-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
-                                        Teléfono</th>
-                                    <th scope="col"
-                                        class="mx-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
-                                        Dirección</th>
-                                        <th scope="col"
-                                        class="mx-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
-                                        Compañía</th>   
-                                    <th scope="col"
-                                        class="mx-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
-                                        Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach ($customerDetails as $customerDetail)
-                                    <tr class="hover:bg-gray-100 cursor-pointer"
-                                        onclick="window.location='{{ route('customer-details.show', $customerDetail->id) }}'">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
-                                            {{ $customerDetail->identification }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
-                                            {{ $customerDetail->full_name }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
-                                            {{ $customerDetail->email }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
-                                            {{ $customerDetail->phone }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
-                                            {{ $customerDetail->address }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
-                                            {{ $customerDetail->company->name }}</td>
-                                        <td
-                                            class="px-6 py-4 whitespace-nowrap text-sm font-medium flex space-x-2 justify-center gap-6">
-                                            <a href="{{ route('customer-details.edit', $customerDetail->id) }}"
-                                                class="text-indigo-600 hover:bg-indigo-900">Editar</a>
-                                            <form action="{{ route('customer-details.destroy', $customerDetail->id) }}" method="POST"
-                                                style="display:inline;">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit"
-                                                    class="text-red-600 hover:text-red-900">Eliminar</button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid #F3F4F8;">
+            <div>
+                <div style="font-size:15px;font-weight:700;color:#1E1B2E;">Directorio de Clientes</div>
+                <div style="font-size:12px;color:#9CA3AF;margin-top:2px;">
+                    Gestiona la información de contacto y pedidos de tus clientes
                 </div>
             </div>
+            <a href="{{ route('customer-details.create') }}" class="btn-primary">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M12 5v14M5 12h14"/>
+                </svg>
+                Nuevo Cliente
+            </a>
+        </div>
+
+        <div style="overflow-x:auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Nombre / Razón Social</th>
+                        <th>Identificación</th>
+                        <th>Teléfono</th>
+                        <th>Ciudad</th>
+                        @if(Auth::user()->role_id === 1)
+                        <th>Empresa</th>
+                        @endif
+                        <th style="text-align:center;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($customerDetails as $customer)
+                    <tr>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <div style="width:32px;height:32px;border-radius:8px;background:#F8F7FF;color:#6C3DE0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;">
+                                    {{ strtoupper(substr($customer->full_name, 0, 1)) }}
+                                </div>
+                                <div style="font-weight:600;color:#1E1B2E;">{{ $customer->full_name }}</div>
+                            </div>
+                        </td>
+                        <td style="color:#6B7280;font-family:monospace;">{{ $customer->identification }}</td>
+                        <td>{{ $customer->phone }}</td>
+                        <td>{{ $customer->municipality }}</td>
+                        @if(Auth::user()->role_id === 1)
+                        <td>
+                            <span style="font-size:12px;color:#6C3DE0;background:#EDE9FF;padding:2px 8px;border-radius:4px;font-weight:600;">
+                                {{ $customer->company->name ?? 'N/A' }}
+                            </span>
+                        </td>
+                        @endif
+                        <td style="text-align:center;">
+                            <div style="display:flex;gap:6px;justify-content:center;">
+                                <a href="{{ route('customer-details.show', $customer->id) }}" class="btn-secondary" style="padding:6px 10px;font-size:12px;">Ver</a>
+                                <a href="{{ route('customer-details.edit', $customer->id) }}" class="btn-edit" style="padding:6px 10px;font-size:12px;">Editar</a>
+                                <form action="{{ route('customer-details.destroy', $customer->id) }}" method="POST" onsubmit="return confirm('¿Eliminar cliente?')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="btn-danger" style="padding:6px 10px;font-size:12px;">Eliminar</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" style="text-align:center;padding:48px;color:#9CA3AF;">No se encontraron clientes.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <div style="padding:16px 24px;border-top:1px solid #F3F4F8;">
+            {{ $customerDetails->links() }}
         </div>
     </div>
-
 </x-app-layout>

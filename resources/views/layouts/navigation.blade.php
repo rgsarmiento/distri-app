@@ -32,10 +32,23 @@
                         </x-nav-link>
                     @endif
 
-                    <!-- Mostrar solo si el usuario es Distribuidor (role_id = 2) -->
+                    <!-- Supervisor (role_id = 3) -->
+                    @if (Auth::user()->role_id === 3)
+                        <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.index')">
+                            {{ __('Usuarios') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('customer-details.index')" :active="request()->routeIs('customer-details.index')">
+                            {{ __('Clientes') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('orders.index')" :active="request()->routeIs('orders.index')">
+                            {{ __('Órdenes') }}
+                        </x-nav-link>
+                    @endif
+
+                    <!-- Distribuidor (role_id = 2) -->
                     @if (Auth::user()->role_id === 2)
                         <x-nav-link :href="route('customer-details.index')" :active="request()->routeIs('customer-details.index')">
-                            {{ __('Customers') }}
+                            {{ __('Clientes') }}
                         </x-nav-link>
                         <x-nav-link :href="route('orders.index')" :active="request()->routeIs('orders.index')">
                             {{ __('Órdenes') }}

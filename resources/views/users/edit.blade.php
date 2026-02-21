@@ -42,6 +42,7 @@
                     </div>
                 
                     <!-- Compañía -->
+                    @if(auth()->user()->role_id === 1)
                     <div class="mt-4">
                         <x-input-label for="company_id" :value="__('Compañía')" />
                         <select id="company_id" name="company_id" class="block mt-1 w-full rounded-md" required>
@@ -53,8 +54,12 @@
                         </select>
                         <x-input-error :messages="$errors->get('company_id')" class="mt-2" />
                     </div>
+                    @else
+                        <input type="hidden" name="company_id" value="{{ $user->company_id }}">
+                    @endif
                 
                     <!-- Rol -->
+                    @if(auth()->user()->role_id === 1)
                     <div class="mt-4">
                         <x-input-label for="role_id" :value="__('Rol')" />
                         <select id="role_id" name="role_id" class="block mt-1 w-full rounded-md" required>
@@ -66,6 +71,9 @@
                         </select>
                         <x-input-error :messages="$errors->get('role_id')" class="mt-2" />
                     </div>
+                    @else
+                        <input type="hidden" name="role_id" value="{{ $user->role_id }}">
+                    @endif
                 
                     <!-- Botón de guardar -->
                     <div class="w-full mt-4 flex justify-center">

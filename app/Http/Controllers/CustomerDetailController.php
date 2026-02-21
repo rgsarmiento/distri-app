@@ -10,7 +10,23 @@ class CustomerDetailController extends Controller
 {
     public function index()
     {
-        $customerDetails = CustomerDetail::with('company')->paginate(10);
+        $user = auth()->user();
+
+        if ($user->role_id === 3) {
+            // Supervisor: solo clientes de su empresa
+            $customerDetails = CustomerDetail::with('company')
+                ->where('company_id', $user->company_id)
+                ->paginate(10);
+        } elseif ($user->role_id === 1) {
+            // Admin: todos
+            $customerDetails = CustomerDetail::with('company')->paginate(10);
+        } else {
+            // Distribuidor: los clientes de su empresa también (para poder crear órdenes)
+            $customerDetails = CustomerDetail::with('company')
+                ->where('company_id', $user->company_id)
+                ->paginate(10);
+        }
+
         return view('customer-details.index', compact('customerDetails'));
     }
 
@@ -28,8 +44,12 @@ class CustomerDetailController extends Controller
             'email' => 'required|email|unique:customer_details',
             'phone' => 'required',
             'address' => 'required',
-            'company_id' => 'required|exists:companies,id',
+            'company_id' => auth()->user()->role_id === 1 ? 'required|exists:companies,id' : 'nullable',
         ]);
+
+        if (auth()->user()->role_id !== 1) {
+            $validatedData['company_id'] = auth()->user()->company_id;
+        }
 
         CustomerDetail::create($validatedData);
 
@@ -39,20 +59,31 @@ class CustomerDetailController extends Controller
 
     public function show($id)
     {
-        $customer = CustomerDetail::with(['company'])->findOrFail($id);
-        return view('customer-details.show', compact('customer'));
+        $user = auth()->user();
+        $customerDetail = CustomerDetail::with(['company'])->findOrFail($id);
+        
+        if ($user->role_id !== 1 && $customerDetail->company_id !== $user->company_id) abort(403);
+        
+        return view('customer-details.show', compact('customerDetail'));
     }
 
     public function edit($id)
     {
-        $companies = Company::all();
+        $user = auth()->user();
         $customerDetail = CustomerDetail::findOrFail($id);
+        
+        if ($user->role_id !== 1 && $customerDetail->company_id !== $user->company_id) abort(403);
+
+        $companies = $user->role_id === 1 ? Company::all() : Company::where('id', $user->company_id)->get();
         return view('customer-details.edit', compact('customerDetail', 'companies'));
     }
 
     public function update(Request $request, $id)
     {
+        $user = auth()->user();
         $customerDetail = CustomerDetail::findOrFail($id);
+        
+        if ($user->role_id !== 1 && $customerDetail->company_id !== $user->company_id) abort(403);
 
         $validated = $request->validate([
             'identification' => 'required|unique:customer_details,identification,' . $customerDetail->id,
@@ -63,14 +94,26 @@ class CustomerDetailController extends Controller
             'company_id' => 'required|exists:companies,id',
         ]);
 
+        if ($user->role_id !== 1) $validated['company_id'] = $user->company_id;
+
         $customerDetail->update($validated);
 
         $this->flashNotification('success', 'Cliente Actualizado', 'El cliente ha sido actualizado exitosamente.');
         return redirect()->route('customer-details.index');
     }
 
-    public function destroy(CustomerDetail $customerDetail)
+    public function destroy($id)
     {
+        $user = auth()->user();
+        $customerDetail = CustomerDetail::withCount('orders')->findOrFail($id);
+
+        if ($user->role_id !== 1 && $customerDetail->company_id !== $user->company_id) abort(403);
+
+        if ($user->role_id === 3 && $customerDetail->orders_count > 0) {
+            $this->flashNotification('error', 'Error', 'No puedes eliminar un cliente que ya tiene pedidos registrados.');
+            return redirect()->route('customer-details.index');
+        }
+
         $customerDetail->delete();
 
         $this->flashNotification('success', 'Cliente Eliminado', 'El cliente ha sido eliminado exitosamente.');
@@ -79,9 +122,19 @@ class CustomerDetailController extends Controller
 
     public function search(Request $request)
     {
-        $query = $request->input('query');
-        $customers = CustomerDetail::where('full_name', 'like', "%{$query}%")
-            ->orWhere('identification', 'like', "%{$query}%")
+        $user = auth()->user();
+        $queryValue = $request->input('query');
+        
+        $query = CustomerDetail::query();
+
+        if ($user && $user->role_id !== 1) {
+            $query->where('company_id', $user->company_id);
+        }
+
+        $customers = $query->where(function($q) use ($queryValue) {
+                $q->where('full_name', 'like', "%{$queryValue}%")
+                  ->orWhere('identification', 'like', "%{$queryValue}%");
+            })
             ->get();
 
         return response()->json($customers);

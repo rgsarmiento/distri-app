@@ -10,13 +10,10 @@ use Symfony\Component\HttpFoundation\Response;
 class RoleMiddleware
 {
     /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * Solo permite acceso al Admin (role_id = 1).
      */
-    public function handle(Request $request, Closure $next) : Response
+    public function handle(Request $request, Closure $next): Response
     {
-        // Verificar si el rol coincide
         $userRole = Auth::user()->role_id;
 
         if ($userRole != 1) {

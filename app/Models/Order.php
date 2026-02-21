@@ -16,6 +16,7 @@ class Order extends Model
         'total_tax',
         'total',
         'status',
+        'observations',
     ];
 
     protected $casts = [
@@ -38,6 +39,6 @@ class Order extends Model
 
     public function customer()
     {
-        return $this->belongsTo(CustomerDetail::class); // Una orden pertenece a un cliente
+        return $this->belongsTo(CustomerDetail::class, 'customer_id'); // Una orden pertenece a un cliente
     }
 }
