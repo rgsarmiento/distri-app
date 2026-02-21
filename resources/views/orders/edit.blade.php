@@ -64,9 +64,9 @@
                         <div style="margin-bottom:20px;">
                             <label class="form-label" style="font-size:11px;">2. Cantidad a agregar:</label>
                             <div style="display:flex; align-items:center; gap:10px;">
-                                <button type="button" onclick="adjustMainQty(-1)" class="btn-secondary" style="padding:5px 12px; font-weight:bold;">-</button>
+                                <button type="button" onclick="adjustMainQty(-1)" class="btn-secondary" style="padding:5px 12px; font-weight:bold; touch-action: manipulation; user-select: none;">-</button>
                                 <input type="number" id="main_quantity" value="1" min="1" class="form-input" style="width:80px; text-align:center;">
-                                <button type="button" onclick="adjustMainQty(1)" class="btn-secondary" style="padding:5px 12px; font-weight:bold;">+</button>
+                                <button type="button" onclick="adjustMainQty(1)" class="btn-secondary" style="padding:5px 12px; font-weight:bold; touch-action: manipulation; user-select: none;">+</button>
                             </div>
                         </div>
 
@@ -135,9 +135,9 @@
                 </div>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
-                <button type="button" onclick="adjustItemQty(this, -1)" class="btn-secondary" style="padding:2px 8px; font-size:12px;">-</button>
+                <button type="button" onclick="adjustItemQty(this, -1)" class="btn-secondary" style="padding:2px 8px; font-size:12px; touch-action: manipulation; user-select: none;">-</button>
                 <input type="number" name="quantities[]" class="quantity-input form-input" style="width:60px;padding:5px 4px;text-align:center; font-size:13px;" min="1" value="1" onkeydown="if(event.key==='Enter'){event.preventDefault();}">
-                <button type="button" onclick="adjustItemQty(this, 1)" class="btn-secondary" style="padding:2px 8px; font-size:12px;">+</button>
+                <button type="button" onclick="adjustItemQty(this, 1)" class="btn-secondary" style="padding:2px 8px; font-size:12px; touch-action: manipulation; user-select: none;">+</button>
                 
                 <input type="hidden" name="products[]" class="product-input">
                 <input type="hidden" class="product-tax-rate">
