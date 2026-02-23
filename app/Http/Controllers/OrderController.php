@@ -127,6 +127,7 @@ class OrderController extends Controller
                 'subtotal'  => $lineSubtotal,
                 'total_tax' => $lineTotalTax,
                 'total'     => $lineTotal,
+                'price_final' => $basePrice,
             ]);
 
             if ($order->status === 'facturado') {
@@ -211,6 +212,7 @@ class OrderController extends Controller
                 'subtotal'  => $lineSubtotal,
                 'total_tax' => $lineTotalTax,
                 'total'     => $lineTotal,
+                'price_final' => $basePrice,
             ]);
 
             if ($order->status === 'facturado') {
@@ -294,12 +296,16 @@ class OrderController extends Controller
                 'status' => $order->status,
                 "total" => $order->total,
                 'products' => $order->products->map(function ($product) {
+                    $basePrice = $product->pivot->price_final > 0 
+                        ? $product->pivot->price_final 
+                        : ($product->pivot->quantity > 0 ? ($product->pivot->subtotal / $product->pivot->quantity) : 0);
+
                     return [
                         'name' => $product->name,
                         'code' => $product->code,
-                        'base_price_selected' => $product->pivot->price_final,
+                        'base_price_selected' => $basePrice,
                         'tax_rate' => $product->tax_rate,
-                        'total_price' => $product->pivot->price_final * (1 + $product->tax_rate / 100),
+                        'total_price' => $basePrice * (1 + $product->tax_rate / 100),
                         'company_id' => $product->company_id,
                         'quantity' => $product->pivot->quantity,
                     ];
