@@ -256,6 +256,83 @@ class OrderController extends Controller
         return view('orders.invoice', compact('order'));
     }
 
+    /**
+     * API: Descarga órdenes para integración con Nodo POS
+     */
+    /* FUNCIONES APARTE DEL CRUD */
+    /* Descargar órdenes del sistema mediante url*/
+    public function downloadOrders($companyId, $status)
+    {
+        // Validar que el estado sea 0 o 1
+        if (!in_array($status, [0, 1])) {
+            return response()->json(['error' => 'Estado inválido'], 400);
+        }
+
+        // Convertir el parámetro de estado en el texto correspondiente
+        $statusText = $status == 0 ? 'pendiente' : 'facturado';
+
+        // Obtener las órdenes según los parámetros
+        $orders = Order::whereHas('user', function ($query) use ($companyId) {
+            $query->where('company_id', $companyId);
+        })
+            ->where('status', $statusText)
+            ->with(['customer', 'products', 'user'])
+            ->get();
+
+        // Formato JSON de la respuesta
+        $formattedOrders = $orders->map(function ($order) {
+            return [
+                'document' => $order->id,
+                'customer' => [
+                    'identification' => $order->customer->identification,
+                    'name' => $order->customer->full_name,
+                ],
+                'user' => [
+                    'id' => $order->user->id,
+                    'name' => $order->user->name,
+                ],
+                'status' => $order->status,
+                "total" => $order->total,
+                'products' => $order->products->map(function ($product) {
+                    return [
+                        'name' => $product->name,
+                        'code' => $product->code,
+                        'base_price_selected' => $product->pivot->price_final,
+                        'tax_rate' => $product->tax_rate,
+                        'total_price' => $product->pivot->price_final * (1 + $product->tax_rate / 100),
+                        'company_id' => $product->company_id,
+                        'quantity' => $product->pivot->quantity,
+                    ];
+                }),
+                'observations' => $order->observations,
+                'creation_date' => $order->created_at,
+            ];
+        });
+
+        // Devolver las órdenes como un arreglo JSON
+        return response()->json($formattedOrders);
+    }
+
+    public function updateOrderStatus($orderId)
+    {
+        // Buscar la orden por su ID
+        $order = Order::findOrFail($orderId);
+
+        // Actualizar el estado de la orden
+        $order->update(['status' => 'facturado']);
+        return response()->json(['message' => 'Estado de la orden actualizado']);
+    }
+
+    public function showInvoice($id){
+        $order = Order::with('products', 'user')->findOrFail($id);
+        $company = Company::findOrFail($order->user->company_id);
+        $customer = CustomerDetail::findOrFail($order->customer_id);
+        $order->company_details = $company;
+        $order->customer_details = $customer;    
+        return view('orders.invoice', compact('order'));
+    }
+
+
     private function flashNotification($type, $title, $message)
     {
         session()->flash('notification', [

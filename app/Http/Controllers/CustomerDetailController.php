@@ -140,6 +140,58 @@ class CustomerDetailController extends Controller
         return response()->json($customers);
     }
 
+    public function storeCustomers(Request $request){
+    try {
+        $inserted = 0;
+        $updated = 0;
+
+        // Tomar el array de clientes desde el request
+        $customers = $request->input('customers', []);
+
+        foreach ($customers as $customer) {
+            $existingCustomer = CustomerDetail::where('identification', $customer['identification'])
+                ->where('company_id', $customer['company_id'])
+                ->first();
+
+            if ($existingCustomer) {
+                $existingCustomer->update([
+                    'identification' => $customer['identification'],
+                    'full_name'      => $customer['full_name'],
+                    'email'          => $customer['email'],
+                    'phone'          => $customer['phone'],
+                    'address'        => $customer['address'],
+                    'company_id'     => $customer['company_id'],
+                    'updated_at'     => now(),
+                ]);
+                $updated++;
+            } else {
+                CustomerDetail::create([
+                    'identification' => $customer['identification'],
+                    'full_name'      => $customer['full_name'],
+                    'email'          => $customer['email'],
+                    'phone'          => $customer['phone'],
+                    'address'        => $customer['address'],
+                    'company_id'     => $customer['company_id'],
+                    'created_at'     => now(),
+                    'updated_at'     => now(),
+                ]);
+                $inserted++;
+            }
+        }
+
+        return response()->json([
+            'status'  => true,
+            'message' => "Clientes procesados correctamente. Insertados: $inserted, Actualizados: $updated"
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status'  => false,
+            'message' => $e->getMessage()
+        ], 500);
+    }
+}
+
     private function flashNotification($type, $title, $message)
     {
         session()->flash('notification', [

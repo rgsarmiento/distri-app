@@ -16,6 +16,7 @@ class CustomerDetail extends Model
         'phone',
         'address',
         'company_id',
+        'municipality',
     ];
 
     public function company()
