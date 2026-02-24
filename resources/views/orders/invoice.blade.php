@@ -40,16 +40,19 @@
         @media print {
             @page {
                 margin: 0;
+                size: auto;
             }
             body {
                 margin: 0;
                 padding: 0;
+                width: 100%;
             }
             .ticket {
                 width: 100%;
-                max-width: none;
+                max-width: 100%;
                 margin: 0;
-                padding: 5px; /* Pequeño respiro interno para que no pegue al borde físico si la impresora lo permite */
+                padding: 0 2mm; /* Margen mínimo de seguridad adaptable */
+                box-sizing: border-box;
             }
             .btn-print {
                 display: none;

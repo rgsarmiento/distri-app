@@ -62,7 +62,7 @@
                             <label class="form-label" style="font-size:11px;">2. Cantidad a agregar:</label>
                             <div style="display:flex; align-items:center; gap:10px;">
                                 <button type="button" onclick="adjustMainQty(-1)" class="btn-secondary" style="padding:5px 12px; font-weight:bold; touch-action: manipulation; user-select: none;">-</button>
-                                <input type="number" id="main_quantity" value="1" min="1" class="form-input" style="width:80px; text-align:center;">
+                                <input type="number" id="main_quantity" value="1" min="0.01" step="any" class="form-input" style="width:80px; text-align:center;">
                                 <button type="button" onclick="adjustMainQty(1)" class="btn-secondary" style="padding:5px 12px; font-weight:bold; touch-action: manipulation; user-select: none;">+</button>
                             </div>
                         </div>
@@ -143,7 +143,7 @@
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
                 <button type="button" onclick="adjustItemQty(this, -1)" class="btn-secondary" style="padding:2px 8px; font-size:12px; touch-action: manipulation; user-select: none;">-</button>
-                <input type="number" name="quantities[]" class="quantity-input form-input" style="width:60px;padding:5px 4px;text-align:center; font-size:13px;" min="1" value="1" onkeydown="if(event.key==='Enter'){event.preventDefault();}">
+                <input type="number" name="quantities[]" class="quantity-input form-input" style="width:60px;padding:5px 4px;text-align:center; font-size:13px;" min="0.01" step="any" value="1" onkeydown="if(event.key==='Enter'){event.preventDefault();}">
                 <button type="button" onclick="adjustItemQty(this, 1)" class="btn-secondary" style="padding:2px 8px; font-size:12px; touch-action: manipulation; user-select: none;">+</button>
                 
                 <input type="hidden" name="products[]" class="product-input">
@@ -262,14 +262,14 @@
 
         function adjustMainQty(val) {
             const input = document.getElementById('main_quantity');
-            let current = parseInt(input.value) || 1;
-            input.value = Math.max(1, current + val);
+            let current = parseFloat(input.value) || 0;
+            input.value = (Math.max(0.01, current + val)).toFixed(2);
         }
 
         function adjustItemQty(btn, val) {
             const input = btn.parentElement.querySelector('.quantity-input');
-            let current = parseInt(input.value) || 1;
-            input.value = Math.max(1, current + val);
+            let current = parseFloat(input.value) || 0;
+            input.value = (Math.max(0.01, current + val)).toFixed(2);
             updateTotals();
             saveDraft();
         }
@@ -411,13 +411,13 @@
             if (!selectedPriceRadio) { alert('Selecciona un precio'); return; }
 
             const chosenBasePrice = parseFloat(selectedPriceRadio.value);
-            const quantityToAdd = parseInt(document.getElementById('main_quantity').value) || 1;
+            const quantityToAdd = parseFloat(document.getElementById('main_quantity').value) || 1;
             const priceKey = `${selectedProduct.id}_${chosenBasePrice}`;
-
             const existingProduct = findExistingProduct(priceKey);
+
             if (existingProduct) {
                 const quantityInput = existingProduct.querySelector('.quantity-input');
-                quantityInput.value = parseInt(quantityInput.value) + quantityToAdd;
+                quantityInput.value = (parseFloat(quantityInput.value) + quantityToAdd).toFixed(2);
             } else {
                 renderProductItem({
                     priceKey: priceKey,
@@ -450,7 +450,7 @@
             let totalTax = 0;
             
             document.querySelectorAll('.product-item').forEach(item => {
-                const quantity = parseInt(item.querySelector('.quantity-input').value) || 0;
+                const quantity = parseFloat(item.querySelector('.quantity-input').value) || 0;
                 const basePrice = parseFloat(item.querySelector('.product-base-price').value);
                 const taxRate = parseFloat(item.querySelector('.product-tax-rate').value);
                 
