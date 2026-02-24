@@ -334,6 +334,19 @@ class OrderController extends Controller
         return response()->json(['message' => 'Estado de la orden actualizado']);
     }
 
+    public function updateMultipleOrderStatus(Request $request)
+    {
+        $orderIds = $request->input('order_ids', []);
+
+        if (empty($orderIds)) {
+            return response()->json(['message' => 'No se proporcionaron IDs de orden'], 400);
+        }
+
+        Order::whereIn('id', $orderIds)->update(['status' => 'facturado']);
+
+        return response()->json(['message' => 'Estados de las órdenes actualizados correctamente']);
+    }
+
     public function showInvoice($id){
         $order = Order::with('products', 'user')->findOrFail($id);
         $company = Company::findOrFail($order->user->company_id);
