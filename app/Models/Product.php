@@ -27,7 +27,8 @@ class Product extends Model
      */
     public function getPriceWithTax()
     {
-        return $this->base_price * (1 + ($this->tax_rate / 100));
+        $price = $this->base_price_1 ?: $this->base_price;
+        return $price * (1 + ($this->tax_rate / 100));
     }
 
     /**

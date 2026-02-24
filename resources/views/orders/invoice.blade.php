@@ -5,13 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Orden #{{ $order->id }} - Impresión</title>
     <style>
-        body {
+        html, body {
+            margin: 0;
+            padding: 0;
             font-family: 'Courier New', Courier, monospace;
             font-size: 13px;
-            margin: 0;
-            padding: 10px;
             line-height: 1.2;
             color: #000;
+        }
+
+        body {
+            padding: 10px;
         }
 
         .ticket {
@@ -34,8 +38,22 @@
         }
 
         @media print {
-            .btn-print { display: none; }
-            body { padding: 0; }
+            @page {
+                margin: 0;
+            }
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            .ticket {
+                width: 100%;
+                max-width: none;
+                margin: 0;
+                padding: 5px; /* Pequeño respiro interno para que no pegue al borde físico si la impresora lo permite */
+            }
+            .btn-print {
+                display: none;
+            }
         }
 
         .header { margin-bottom: 10px; }

@@ -66,7 +66,7 @@
                         </td>
                         <td style="color:#6B7280;font-size:13px;font-family:monospace;">{{ $product->code }}</td>
                         <td style="text-align:right;color:#1E1B2E;font-weight:500;">
-                            ${{ number_format($product->base_price, 0, ',', '.') }}
+                            ${{ number_format($product->base_price_1 ?: $product->base_price, 0, ',', '.') }}
                         </td>
                         <td style="text-align:right;color:#6B7280;">
                             {{ number_format($product->tax_rate, 0) }}%

@@ -48,8 +48,8 @@ class ProductController extends Controller
     
             $data = [
                 'name' => $product['name'],
-                'base_price' => $product['base_price'],
-                'base_price_1' => $product['base_price_1'] ?? ($product['base_price'] ?? 0),
+                'base_price' => $product['base_price_1'] ?? $product['base_price'],
+                'base_price_1' => $product['base_price_1'] ?? $product['base_price'],
                 'base_price_2' => $product['base_price_2'] ?? 0,
                 'base_price_3' => $product['base_price_3'] ?? 0,
                 'tax_rate' => $product['tax_rate'],
