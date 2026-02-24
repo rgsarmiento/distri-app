@@ -273,12 +273,17 @@ class OrderController extends Controller
         // Convertir el parámetro de estado en el texto correspondiente
         $statusText = $status == 0 ? 'pendiente' : 'facturado';
 
-        // Obtener las órdenes según los parámetros
-        $orders = Order::whereHas('user', function ($query) use ($companyId) {
-            $query->where('company_id', $companyId);
-        })
-            ->where('status', $statusText)
-            ->with(['customer', 'products', 'user'])
+        // Obtener las órdenes optimizando con JOIN en lugar de whereHas
+        $orders = Order::select('orders.*')
+            ->join('users', 'orders.user_id', '=', 'users.id')
+            ->where('users.company_id', $companyId)
+            ->where('orders.status', $statusText)
+            ->where('orders.created_at', '>=', now()->subDays(60)) // Traer solo los últimos 60 días para agilizar
+            ->with([
+                'customer:id,full_name,identification', 
+                'user:id,name', 
+                'products:id,name,code,tax_rate,company_id'
+            ])
             ->get();
 
         // Formato JSON de la respuesta

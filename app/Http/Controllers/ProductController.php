@@ -89,7 +89,10 @@ class ProductController extends Controller
                 'products' => 'required|array',
                 'products.*.name' => 'required|string|max:255',
                 'products.*.code' => 'required|string',
-                'products.*.base_price' => 'required|numeric',
+                'products.*.base_price' => 'nullable|numeric',
+                'products.*.base_price_1' => 'nullable|numeric',
+                'products.*.base_price_2' => 'nullable|numeric',
+                'products.*.base_price_3' => 'nullable|numeric',
                 'products.*.tax_rate' => 'required|numeric',
                 'products.*.company_id' => 'required|integer|exists:companies,id',
             ]);
