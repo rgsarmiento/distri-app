@@ -145,6 +145,7 @@ class OrderController extends Controller
         ]);
 
         $this->flashNotification('success', 'Orden Creada', 'La orden ha sido creada exitosamente.');
+        session()->flash('clear_order_draft', true);
         return redirect()->route('orders.index');
     }
 

@@ -67,9 +67,14 @@
                             </div>
                         </div>
 
-                        <button type="button" id="add_product_button" class="btn-primary" style="width:100%;justify-content:center;padding:12px; font-weight:bold;">
-                            Añadir a la lista
-                        </button>
+                        <div style="display:flex; gap:10px;">
+                            <button type="button" id="cancel_product_button" class="btn-secondary" style="flex:1; justify-content:center; padding:12px; font-weight:bold;">
+                                Cancelar
+                            </button>
+                            <button type="button" id="add_product_button" class="btn-primary" style="flex:2; justify-content:center; padding:12px; font-weight:bold;">
+                                Añadir a la lista
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -110,7 +115,7 @@
                             <span id="total_price" style="color:#6C3DE0;">$<span>0.00</span></span>
                         </div>
                         
-                        <button type="submit" onclick="clearDraft()" class="btn-primary" style="width:100%;justify-content:center;margin-top:12px;padding:14px; font-size:16px;">
+                        <button type="submit" class="btn-primary" style="width:100%;justify-content:center;margin-top:12px;padding:14px; font-size:16px;">
                             Finalizar y Guardar Pedido
                         </button>
                     </div>
@@ -285,6 +290,18 @@
         // Prevenir Enter en inputs de búsqueda
         document.getElementById('customer_search').addEventListener('keydown', (e) => { if(e.key === 'Enter') e.preventDefault(); });
         document.getElementById('product_search').addEventListener('keydown', (e) => { if(e.key === 'Enter') e.preventDefault(); });
+        
+        // Cerrar listas al hacer clic afuera
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#customer_search') && !e.target.closest('#customer_list')) {
+                const cList = document.getElementById('customer_list');
+                if (cList) cList.style.display = 'none';
+            }
+            if (!e.target.closest('#product_search') && !e.target.closest('#product_list')) {
+                const pList = document.getElementById('product_list');
+                if (pList) pList.style.display = 'none';
+            }
+        });
 
         let selectedProduct = null;
 
@@ -432,6 +449,12 @@
 
             updateTotals();
             saveDraft();
+            document.getElementById('selected_product_details').style.display = 'none';
+            document.getElementById('product_search').value = '';
+            selectedProduct = null;
+        });
+
+        document.getElementById('cancel_product_button').addEventListener('click', function() {
             document.getElementById('selected_product_details').style.display = 'none';
             document.getElementById('product_search').value = '';
             selectedProduct = null;

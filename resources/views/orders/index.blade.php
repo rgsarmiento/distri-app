@@ -174,4 +174,10 @@
             {{ $orders->links() }}
         </div>
     </div>
+
+    @if(session('clear_order_draft'))
+    <script>
+        localStorage.removeItem('order_draft_v1');
+    </script>
+    @endif
 </x-app-layout>
