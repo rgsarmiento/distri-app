@@ -327,6 +327,7 @@ class OrderController extends Controller
 
     public function updateOrderStatus($orderId)
     {
+        
         // Buscar la orden por su ID
         $order = Order::findOrFail($orderId);
 
