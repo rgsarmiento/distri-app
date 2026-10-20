@@ -59,7 +59,14 @@
                     {{ $orders->total() }} orden(es) encontradas
                 </div>
             </div>
-            <div style="display:flex;gap:10px;">
+            <div style="display:flex;gap:10px;align-items:center;">
+                <a href="{{ route('warehouse.index') }}"
+                   class="btn-secondary" style="font-size:13px;background:#F8F7FF;border-color:#C4B5FD;color:#6C3DE0;" title="Bandeja de alistamiento y auditoría física de bodega">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                    Bandeja Bodega
+                </a>
                 @if(Auth::user()->role_id !== 2)
                 <a href="{{ route('reports.orders.excel') }}?{{ http_build_query($filters ?? []) }}"
                    class="btn-secondary" style="font-size:13px;">

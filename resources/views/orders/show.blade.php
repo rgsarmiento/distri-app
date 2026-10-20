@@ -94,6 +94,8 @@
                         <span style="color:#6C3DE0;">${{ number_format($order->total, 0, ',', '.') }}</span>
                     </div>
                 </div>
+            </div>
+
             {{-- Trazabilidad de Auditoría --}}
             @if($order->audits && $order->audits->isNotEmpty())
             <div style="margin-top:24px; padding-top:20px; border-top:2px solid #F3F4F8;">

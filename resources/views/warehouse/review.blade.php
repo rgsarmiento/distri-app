@@ -2,9 +2,14 @@
     <x-slot name="header">
         <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
             <span>Alistamiento y Auditoría - Pedido #{{ $order->id }}</span>
-            <a href="{{ route('warehouse.index') }}" class="btn-secondary" style="font-size:13px;">
-                ← Volver a Bandeja
-            </a>
+            <div style="display:flex; gap:10px;">
+                <a href="{{ route('warehouse.index') }}" class="btn-secondary" style="font-size:13px;">
+                    📦 Bandeja Bodega
+                </a>
+                <a href="{{ route('orders.show', $order->id) }}" class="btn-secondary" style="font-size:13px; font-weight:700;">
+                    ← Volver a la Orden
+                </a>
+            </div>
         </div>
     </x-slot>
 
@@ -52,36 +57,47 @@
                 @endif
             </div>
 
-            {{-- Botones de cambio de estado rápido --}}
+            {{-- Botones de cambio de estado paso a paso --}}
             <div style="display:flex; flex-direction:column; gap:8px;">
                 <form action="{{ route('warehouse.update-status', $order->id) }}" method="POST">
                     @csrf
                     @if($order->status === 'CRUDO')
                         <input type="hidden" name="status" value="SEPARADO">
-                        <button type="submit" class="btn-primary" style="width:100%; justify-content:center; background:#4F46E5; padding:10px;">
+                        <button type="submit" class="btn-primary" style="width:100%; justify-content:center; background:#4F46E5; padding:10px; font-size:13px;">
                             📦 Marcar como SEPARADO
                         </button>
+                        <div style="font-size:11px; color:#6B7280; text-align:center; margin-top:3px;">
+                            (Indica que bodega ya está alistando/recogiendo el producto físico)
+                        </div>
                     @elseif($order->status === 'SEPARADO')
                         <input type="hidden" name="status" value="REVISADO">
-                        <button type="submit" class="btn-primary" style="width:100%; justify-content:center; background:#7C3AED; padding:10px;">
+                        <button type="submit" class="btn-primary" style="width:100%; justify-content:center; background:#7C3AED; padding:10px; font-size:13px;">
                             ✔️ Marcar como REVISADO
                         </button>
+                        <div style="font-size:11px; color:#6B7280; text-align:center; margin-top:3px;">
+                            (Conteo físico verificado y sustituciones completadas)
+                        </div>
                     @elseif($order->status === 'REVISADO')
                         <input type="hidden" name="status" value="DEPURADO">
-                        <button type="submit" class="btn-primary" style="width:100%; justify-content:center; background:#059669; padding:10px; font-weight:800;">
-                            🚀 Aprobar y DEPURAR (Listo ERP)
+                        <button type="submit" class="btn-primary" style="width:100%; justify-content:center; background:#059669; padding:10px; font-weight:800; font-size:13px;">
+                            🚀 Aprobar para Facturar (DEPURADO)
                         </button>
+                        <div style="font-size:11px; color:#6B7280; text-align:center; margin-top:3px;">
+                            (Queda disponible para ser descargado y facturado por Nodo ERP)
+                        </div>
                     @else
-                        <div style="font-size:12px; color:#6B7280; text-align:center;">Pedido en estado finalizado o depurado.</div>
+                        <div style="font-size:12px; color:#6B7280; text-align:center; padding:8px; background:#F3F4F6; border-radius:6px;">
+                            Pedido en estado finalizado o depurado.
+                        </div>
                     @endif
                 </form>
 
-                @if($order->status !== 'DEPURADO' && $order->status !== 'FACTURADO' && $order->status !== 'ANULADO')
-                <form action="{{ route('warehouse.update-status', $order->id) }}" method="POST" onsubmit="return confirm('¿Aprobar y pasar a DEPURADO para sincronizar con Nodo ERP?');">
+                @if($order->status === 'CRUDO' || $order->status === 'SEPARADO')
+                <form action="{{ route('warehouse.update-status', $order->id) }}" method="POST" onsubmit="return confirm('¿Aprobar directamente como DEPURADO para que Nodo ERP lo descargue y facture de inmediato?');">
                     @csrf
                     <input type="hidden" name="status" value="DEPURADO">
-                    <button type="submit" class="btn-secondary" style="width:100%; justify-content:center; font-size:12px; padding:6px; color:#059669; border-color:#A7F3D0;">
-                        ⏩ Saltar directo a DEPURADO
+                    <button type="submit" class="btn-secondary" style="width:100%; justify-content:center; font-size:12px; padding:6px; color:#059669; border-color:#A7F3D0;" title="Atajo para pedidos rápidos donde no hay alistamiento en fases">
+                        ⚡ Aprobar directo a Nodo ERP (DEPURADO)
                     </button>
                 </form>
                 @endif

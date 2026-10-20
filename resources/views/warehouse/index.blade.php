@@ -46,6 +46,11 @@
                 <div style="font-size:16px; font-weight:700; color:#1E1B2E;">Bandeja de Pedidos en Alistamiento</div>
                 <div style="font-size:12px; color:#9CA3AF; margin-top:2px;">{{ $orders->total() }} pedidos pendientes de validación o despacho</div>
             </div>
+            <div>
+                <a href="{{ route('orders.index') }}" class="btn-secondary" style="font-size:13px;">
+                    📋 Ver Todas las Órdenes
+                </a>
+            </div>
         </div>
 
         <div style="overflow-x:auto;">
