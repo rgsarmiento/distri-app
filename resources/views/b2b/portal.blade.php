@@ -586,7 +586,7 @@
                             </span>
                         </div>
 
-                        <form action="{{ route('b2b.order.store') }}" method="POST" id="b2b_order_form">
+                        <form action="{{ route('b2b.order.store') }}" method="POST" id="b2b_order_form" onsubmit="clearPersistedCart()">
                             @csrf
 
                             {{-- Contenedor de Ítems --}}
@@ -603,7 +603,9 @@
                                     Instrucciones de Entrega / Notas:
                                 </label>
                                 <textarea name="observations" 
+                                          id="b2b_observations"
                                           rows="2" 
+                                          oninput="onObservationsInput(this)"
                                           placeholder="Ej: Entregar en horario de mañana, puerta lateral..." 
                                           style="width:100%; padding:10px; font-size:13px; font-family:inherit; border:1.5px solid #E5E7EB; border-radius:10px; background:#F9FAFB; outline:none; resize:none;"></textarea>
                             </div>
@@ -859,7 +861,55 @@
 
     {{-- ── LÓGICA JAVASCRIPT DEL CARRITO Y PESTAÑAS ─────────── --}}
     <script>
+        const CART_STORAGE_KEY = 'distriapp_b2b_cart_{{ $customer->id }}_{{ $customer->company_id }}';
+        const OBS_STORAGE_KEY  = 'distriapp_b2b_obs_{{ $customer->id }}_{{ $customer->company_id }}';
+
         let cart = {};
+
+        function loadSavedCart() {
+            try {
+                const saved = localStorage.getItem(CART_STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed && typeof parsed === 'object') {
+                        cart = parsed;
+                    }
+                }
+                const savedObs = localStorage.getItem(OBS_STORAGE_KEY);
+                const obsTextarea = document.getElementById('b2b_observations') || document.querySelector('textarea[name="observations"]');
+                if (savedObs && obsTextarea && !obsTextarea.value) {
+                    obsTextarea.value = savedObs;
+                }
+            } catch (e) {
+                console.error('Error cargando carrito de localStorage', e);
+                cart = {};
+            }
+        }
+
+        function persistCart() {
+            try {
+                if (Object.keys(cart).length > 0) {
+                    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+                } else {
+                    localStorage.removeItem(CART_STORAGE_KEY);
+                }
+            } catch (e) {
+                console.error('Error guardando carrito', e);
+            }
+        }
+
+        function onObservationsInput(textarea) {
+            try {
+                localStorage.setItem(OBS_STORAGE_KEY, textarea.value);
+            } catch (e) {}
+        }
+
+        function clearPersistedCart() {
+            try {
+                localStorage.removeItem(CART_STORAGE_KEY);
+                localStorage.removeItem(OBS_STORAGE_KEY);
+            } catch (e) {}
+        }
 
         function switchTab(tabId) {
             document.querySelectorAll('[id^="tab_content_"]').forEach(el => el.style.display = 'none');
@@ -1043,6 +1093,7 @@
                 if (savEl) savEl.textContent = '-$0,00';
                 document.getElementById('cart_badge').textContent = '0 ítems';
                 syncCatalogCardsWithCart();
+                persistCart();
                 return;
             }
 
@@ -1095,6 +1146,9 @@
 
             // Sincronizar las tarjetas del catálogo
             syncCatalogCardsWithCart();
+
+            // Guardar permanentemente en localStorage
+            persistCart();
         }
 
         // ── MODAL DETALLE DE PEDIDO ─────────────────────────
@@ -1163,6 +1217,16 @@
             switchTab('catalog');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
+
+        // ── RESTAURAR CARRITO SI SE RECARGA LA PÁGINA ───────
+        @if(session('success_message'))
+            clearPersistedCart();
+            cart = {};
+        @else
+            loadSavedCart();
+        @endif
+
+        renderCart();
     </script>
 </body>
 </html>
