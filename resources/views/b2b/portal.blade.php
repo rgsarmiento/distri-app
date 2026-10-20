@@ -144,18 +144,10 @@
             display: flex;
             align-items: center;
             background: #F3F4F6;
-            border-radius: 8px;
-            padding: 2px;
-            border: 1px solid #E5E7EB;
-        }
-
-        .stepper {
-            display: flex;
-            align-items: center;
-            background: #F3F4F6;
             border-radius: 10px;
             padding: 3px;
             border: 1.5px solid #E5E7EB;
+            flex-shrink: 0;
         }
 
         .stepper button {
@@ -186,18 +178,27 @@
         }
 
         .stepper input {
-            width: 50px;
+            width: 58px;
+            min-width: 58px;
             height: 32px;
             text-align: center;
             background: #ffffff;
-            border: 1px solid transparent;
+            border: 1px solid #E5E7EB;
             border-radius: 6px;
             font-weight: 800;
-            font-size: 14px;
+            font-size: 15px;
             color: #1E1B2E;
             outline: none;
             margin: 0 3px;
+            padding: 0 2px;
             box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);
+            -moz-appearance: textfield;
+        }
+
+        .stepper input::-webkit-outer-spin-button,
+        .stepper input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
         }
 
         .stepper input:focus {
@@ -546,6 +547,7 @@
                                                id="qty_{{ $product->id }}" 
                                                value="1" 
                                                min="1" 
+                                               onchange="onLocalQtyInputChange({{ $product->id }})"
                                                oninput="if(this.value < 1 && this.value !== '') this.value = 1;"
                                                title="Ingresa la cantidad deseada">
                                         <button type="button" onclick="incrementLocalQty({{ $product->id }})" title="Aumentar cantidad">+</button>
@@ -906,7 +908,14 @@
 
         function incrementLocalQty(productId) {
             const input = document.getElementById('qty_' + productId);
-            if (input) {
+            if (!input) return;
+
+            if (cart[productId]) {
+                // Ya está en el pedido: incrementa 1 unidad directamente al pedido
+                cart[productId].qty += 1;
+                renderCart();
+            } else {
+                // Aún no se ha agregado: incrementa el valor en la casilla
                 const current = parseInt(input.value) || 0;
                 input.value = current + 1;
             }
@@ -914,7 +923,17 @@
 
         function decrementLocalQty(productId) {
             const input = document.getElementById('qty_' + productId);
-            if (input) {
+            if (!input) return;
+
+            if (cart[productId]) {
+                // Ya está en el pedido: disminuye 1 unidad del pedido; si llega a 0 se elimina
+                cart[productId].qty -= 1;
+                if (cart[productId].qty <= 0) {
+                    delete cart[productId];
+                }
+                renderCart();
+            } else {
+                // Aún no se ha agregado: decrementa mínimo a 1
                 const current = parseInt(input.value) || 1;
                 if (current > 1) {
                     input.value = current - 1;
@@ -922,28 +941,37 @@
             }
         }
 
+        function onLocalQtyInputChange(productId) {
+            const input = document.getElementById('qty_' + productId);
+            if (!input) return;
+
+            let val = parseInt(input.value);
+            if (isNaN(val) || val < 1) {
+                val = 1;
+                input.value = 1;
+            }
+
+            if (cart[productId]) {
+                // Si el producto ya está en el carrito, ajusta la cantidad exacta escrita
+                cart[productId].qty = val;
+                renderCart();
+            }
+        }
+
         function addLocalToCart(id, name, code, finalPrice, originalPrice) {
             const input = document.getElementById('qty_' + id);
-            const qtyToAdd = input ? Math.max(1, parseInt(input.value) || 1) : 1;
+            const chosenQty = input ? Math.max(1, parseInt(input.value) || 1) : 1;
 
-            if (cart[id]) {
-                cart[id].qty += qtyToAdd;
-            } else {
-                cart[id] = { id, name, code, price: finalPrice, originalPrice: originalPrice, qty: qtyToAdd };
-            }
+            // Fija la cantidad exacta elegida en la casilla (no suma sobre sí misma)
+            cart[id] = { id, name, code, price: finalPrice, originalPrice: originalPrice, qty: chosenQty };
 
             renderCart();
 
             // Animación y confirmación en el botón
             const btn = document.getElementById('btn_add_' + id);
             if (btn) {
-                const originalBg = '#6C3DE0';
-                btn.style.background = '#059669';
-                btn.innerHTML = `<span>✓ Agregado (${cart[id].qty})</span>`;
-                setTimeout(() => {
-                    btn.style.background = originalBg;
-                    btn.innerHTML = `<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg><span>+ Agregar más</span>`;
-                }, 1400);
+                btn.style.transform = 'scale(0.96)';
+                setTimeout(() => btn.style.transform = 'scale(1)', 150);
             }
 
             // Animación en el badge del carrito
@@ -968,6 +996,33 @@
             renderCart();
         }
 
+        function syncCatalogCardsWithCart() {
+            document.querySelectorAll('.catalog-item').forEach(card => {
+                const input = card.querySelector('input[id^="qty_"]');
+                if (!input) return;
+                const id = input.id.replace('qty_', '');
+                const btn = document.getElementById('btn_add_' + id);
+
+                if (cart[id]) {
+                    // Está en el carrito: la casilla muestra EXACTAMENTE lo que hay en el pedido
+                    input.value = cart[id].qty;
+                    if (btn) {
+                        btn.style.background = '#059669';
+                        btn.innerHTML = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><span>En Pedido (${cart[id].qty})</span>`;
+                        btn.setAttribute('data-in-cart', 'true');
+                    }
+                } else {
+                    // No está en el carrito: si estaba marcado, resetea a 1 y muestra "Agregar"
+                    if (btn && btn.getAttribute('data-in-cart') === 'true') {
+                        input.value = 1;
+                        btn.style.background = '#6C3DE0';
+                        btn.innerHTML = `<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg><span>Agregar</span>`;
+                        btn.removeAttribute('data-in-cart');
+                    }
+                }
+            });
+        }
+
         function renderCart() {
             const container = document.getElementById('cart_items_container');
             const keys = Object.keys(cart);
@@ -987,6 +1042,7 @@
                 const savEl = document.getElementById('cart_savings');
                 if (savEl) savEl.textContent = '-$0,00';
                 document.getElementById('cart_badge').textContent = '0 ítems';
+                syncCatalogCardsWithCart();
                 return;
             }
 
@@ -1036,6 +1092,9 @@
             document.getElementById('cart_total').textContent = `$${total.toLocaleString('es-CO', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
             document.getElementById('cart_badge').textContent = `${totalItems} ítem(s)`;
             document.getElementById('btn_submit_order').disabled = false;
+
+            // Sincronizar las tarjetas del catálogo
+            syncCatalogCardsWithCart();
         }
 
         // ── MODAL DETALLE DE PEDIDO ─────────────────────────
