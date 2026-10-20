@@ -68,17 +68,18 @@ class CustomerB2BController extends Controller
             return redirect()->route('b2b.login');
         }
 
-        $customer = CustomerDetail::with('company')->findOrFail($customerId);
+        $customer = CustomerDetail::with(['company', 'sellers'])->findOrFail($customerId);
 
         // Catálogo de productos de su empresa con stock
         $products = Product::where('company_id', $customer->company_id)
             ->orderBy('name')
             ->get();
 
-        // Órdenes recientes del cliente
-        $myOrders = Order::where('customer_id', $customer->id)
+        // Órdenes recientes del cliente con productos cargados para auditoría y repetir pedido
+        $myOrders = Order::with('products')
+            ->where('customer_id', $customer->id)
             ->orderBy('created_at', 'desc')
-            ->take(10)
+            ->take(20)
             ->get();
 
         return view('b2b.portal', compact('customer', 'products', 'myOrders'));
