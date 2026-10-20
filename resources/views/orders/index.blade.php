@@ -13,12 +13,16 @@
                        placeholder="Nombre o identificación…">
             </div>
 
-            <div style="min-width:140px;">
+            <div style="min-width:160px;">
                 <label class="form-label">Estado</label>
                 <select name="status" class="form-input">
-                    <option value="">Todos</option>
-                    <option value="pendiente"  {{ ($filters['status'] ?? '') === 'pendiente'  ? 'selected' : '' }}>Pendiente</option>
-                    <option value="facturado"  {{ ($filters['status'] ?? '') === 'facturado'  ? 'selected' : '' }}>Facturado</option>
+                    <option value="">Todos los Estados</option>
+                    <option value="CRUDO"     {{ ($filters['status'] ?? '') === 'CRUDO'     ? 'selected' : '' }}>🟡 Crudo (Preventa)</option>
+                    <option value="SEPARADO"  {{ ($filters['status'] ?? '') === 'SEPARADO'  ? 'selected' : '' }}>🔵 Separado (Bodega)</option>
+                    <option value="REVISADO"  {{ ($filters['status'] ?? '') === 'REVISADO'  ? 'selected' : '' }}>🟣 Revisado (Auditado)</option>
+                    <option value="DEPURADO"  {{ ($filters['status'] ?? '') === 'DEPURADO'  ? 'selected' : '' }}>🟢 Depurado (Listo ERP)</option>
+                    <option value="FACTURADO" {{ ($filters['status'] ?? '') === 'FACTURADO' ? 'selected' : '' }}>🏁 Facturado</option>
+                    <option value="ANULADO"   {{ ($filters['status'] ?? '') === 'ANULADO'   ? 'selected' : '' }}>🔴 Anulado</option>
                 </select>
             </div>
 
@@ -99,12 +103,12 @@
                                 <a href="{{ route('orders.invoice', $order->id) }}" class="btn-primary" style="padding:4px 8px;font-size:10px;background:#6C3DE0;" title="Imprimir Ticket">
                                     🖨️
                                 </a>
-                                @if($order->status === 'pendiente')
+                                @if(!in_array(strtoupper($order->status), ['FACTURADO', 'ANULADO']))
                                     <a href="{{ route('orders.edit', $order->id) }}" class="btn-edit" style="padding:4px 8px;font-size:10px;" title="Editar">
                                         ✏️
                                     </a>
                                 @else
-                                    <span style="opacity:0.3; cursor:not-allowed; padding:4px 8px; font-size:10px;" title="Facturado no editable">✏️</span>
+                                    <span style="opacity:0.3; cursor:not-allowed; padding:4px 8px; font-size:10px;" title="Facturado o Anulado - No editable">✏️</span>
                                 @endif
                             </div>
                         </td>
@@ -124,8 +128,21 @@
                         </td>
 
                         <td style="text-align:center;">
-                            <span class="{{ $order->status === 'facturado' ? 'badge-billed' : 'badge-pending' }}">
-                                {{ ucfirst($order->status) }}
+                            @php
+                                $statusUpper = strtoupper($order->status);
+                                $badgeStyles = [
+                                    'CRUDO'     => 'background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;',
+                                    'SEPARADO'  => 'background:#E0E7FF;color:#3730A3;border:1px solid #C7D2FE;',
+                                    'REVISADO'  => 'background:#F3E8FF;color:#6B21A8;border:1px solid #E9D5FF;',
+                                    'DEPURADO'  => 'background:#CCFBF1;color:#115E59;border:1px solid #99F6E4;',
+                                    'FACTURADO' => 'background:#D1FAE5;color:#065F46;border:1px solid #A7F3D0;',
+                                    'ANULADO'   => 'background:#FEE2E2;color:#991B1B;border:1px solid #FECACA;',
+                                    'PENDIENTE' => 'background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;',
+                                ];
+                                $style = $badgeStyles[$statusUpper] ?? 'background:#F3F4F6;color:#374151;';
+                            @endphp
+                            <span style="{{ $style }} padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700; display:inline-block;">
+                                {{ $statusUpper }}
                             </span>
                         </td>
 
@@ -134,13 +151,18 @@
                         </td>
 
                         <td style="text-align:center;" onclick="event.stopPropagation()">
-                            <div style="display:flex;gap:6px;justify-content:center;">
+                            <div style="display:flex;gap:6px;justify-content:center;align-items:center;">
+                                <a href="{{ route('warehouse.review', $order->id) }}"
+                                   class="btn-primary" style="padding:6px 10px; font-size:11px; background:#4F46E5; text-decoration:none; display:inline-flex; align-items:center; gap:4px;"
+                                   title="Auditar, verificar stock y sustituir productos">
+                                    🔍 Auditar
+                                </a>
                                 <a href="{{ route('reports.order.pdf', $order->id) }}"
                                    class="btn-secondary" style="padding:6px 10px;font-size:11px;"
                                    title="Ver PDF">
                                     📄 PDF
                                 </a>
-                                @if($order->status === 'pendiente')
+                                @if(!in_array(strtoupper($order->status), ['FACTURADO', 'ANULADO']))
                                     <form action="{{ route('orders.destroy', $order->id) }}" method="POST"
                                           onsubmit="return confirm('¿Eliminar esta orden?')">
                                         @csrf @method('DELETE')
@@ -149,7 +171,7 @@
                                         </button>
                                     </form>
                                 @else
-                                    <span style="opacity:0.3; cursor:not-allowed; padding:6px 10px; font-size:11px;" title="Facturado - No se puede eliminar">🗑️</span>
+                                    <span style="opacity:0.3; cursor:not-allowed; padding:6px 10px; font-size:11px;" title="Facturado o Anulado - No eliminable">🗑️</span>
                                 @endif
                             </div>
                         </td>

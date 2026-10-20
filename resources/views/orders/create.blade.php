@@ -27,17 +27,39 @@
 
             <div class="grid-cols-mobile-1" style="display:grid;grid-template-columns:1fr;gap:24px;margin-bottom:24px;">
                 <!-- Buscador interactivo del Cliente -->
-                <div style="display:flex; justify-content:between; align-items:end; gap:20px;">
-                    <div style="flex:1;">
-                        <label class="form-label">Cliente</label>
-                        <input type="text" id="customer_search" class="form-input" placeholder="Buscar por nombre o identificación..." autocomplete="off" oninput="filterCustomers()">
-                        <div id="customer_list" class="card" style="position:absolute;z-index:10;width:300px;max-height:200px;overflow-y:auto;display:none;margin-top:4px;"></div>
-                        <input type="hidden" id="customer_id" name="customer_id" required>
-                        <input type="hidden" name="status" value="pendiente">
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <label class="form-label" style="margin-bottom:0;">Cliente</label>
+                        <button type="button" id="btn_today_customers" onclick="toggleTodayCustomers()" class="btn-secondary" style="font-size:12px; padding:5px 12px; border-radius:20px; display:inline-flex; align-items:center; gap:6px; background:#EEF2FF; color:#4338CA; border:1px solid #C7D2FE; cursor:pointer;" title="Filtrar clientes agendados para visita hoy">
+                            <span>📅</span> <strong>Clientes de Hoy</strong> <span id="today_filter_indicator" style="display:none; color:#059669; font-weight:bold;">(Activo)</span>
+                        </button>
                     </div>
-                    <button type="button" onclick="confirmResetOrder()" class="btn-secondary" style="background:#FFEBEB; color:#EF4444; border:1px solid #FFD1D1; padding:10px 20px;">
-                        🗑️ Borrar Orden
-                    </button>
+
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
+                        <div style="flex:1; position:relative;">
+                            <input type="text" id="customer_search" class="form-input" placeholder="Buscar por nombre o identificación..." autocomplete="off" oninput="filterCustomers()">
+                            <div id="customer_list" class="card" style="position:absolute;z-index:20;width:100%;max-height:220px;overflow-y:auto;display:none;margin-top:4px;box-shadow:0 10px 25px rgba(0,0,0,0.1);"></div>
+                            <input type="hidden" id="customer_id" name="customer_id" required>
+                            <input type="hidden" id="route_id" name="route_id">
+                            <input type="hidden" name="status" value="CRUDO">
+
+                            <div id="customer_discount_badge" style="display:none; margin-top:8px; padding:6px 12px; border-radius:8px; background:#ECFDF5; border:1px solid #A7F3D0; color:#065F46; font-size:12px; font-weight:700;">
+                                🎯 Descuento Comercial Aplicado: <span id="customer_discount_val">0</span>% a toda la lista de precios
+                            </div>
+                        </div>
+
+                        <div style="width:160px;">
+                            <label class="form-label" style="font-size:11px; margin-bottom:4px;">Condición de Pago</label>
+                            <select name="payment_term" id="payment_term" class="form-input" style="padding:8px 10px; font-size:13px;">
+                                <option value="CONTADO" selected>CONTADO</option>
+                                <option value="CREDITO">CRÉDITO</option>
+                            </select>
+                        </div>
+
+                        <button type="button" onclick="confirmResetOrder()" class="btn-secondary" style="background:#FFEBEB; color:#EF4444; border:1px solid #FFD1D1; padding:10px 16px; margin-top:20px;">
+                            🗑️ Borrar
+                        </button>
+                    </div>
                 </div>
                 <x-input-error :messages="$errors->get('customer_id')" class="mt-1" />
             </div>
@@ -162,14 +184,37 @@
     </template>
 
     <script>
+        let isTodayFilterActive = false;
+        let selectedCustomerDiscount = 0;
+
+        function toggleTodayCustomers() {
+            isTodayFilterActive = !isTodayFilterActive;
+            const indicator = document.getElementById('today_filter_indicator');
+            const btn = document.getElementById('btn_today_customers');
+            
+            if (isTodayFilterActive) {
+                indicator.style.display = 'inline';
+                btn.style.background = '#C7D2FE';
+                btn.style.borderColor = '#6366F1';
+            } else {
+                indicator.style.display = 'none';
+                btn.style.background = '#EEF2FF';
+                btn.style.borderColor = '#C7D2FE';
+            }
+
+            filterCustomers(true);
+        }
+
         // Función para filtrar clientes por nombre o identificación
-        function filterCustomers() {
+        function filterCustomers(forceOpen = false) {
             let query = document.getElementById('customer_search').value;
             const customerRoute = @json(route('customers.search'));
             const customerList = document.getElementById('customer_list');
 
-            if (query.length > 1) {
-                fetch(`${customerRoute}?query=${query}`)
+            const url = `${customerRoute}?query=${encodeURIComponent(query)}&today_only=${isTodayFilterActive ? 1 : 0}`;
+
+            if (query.length > 1 || isTodayFilterActive || forceOpen) {
+                fetch(url)
                     .then(response => response.json())
                     .then(data => {
                         customerList.innerHTML = '';
@@ -177,9 +222,12 @@
                             customerList.style.display = 'block';
                             data.forEach(customer => {
                                 let div = document.createElement('div');
-                                div.textContent = `${customer.full_name} - ${customer.identification}`;
+                                let discountTag = customer.discount_rate > 0 ? ` <span style="background:#ECFDF5; color:#059669; font-size:10px; font-weight:800; padding:2px 6px; border-radius:4px;">-${customer.discount_rate}%</span>` : '';
+                                div.innerHTML = `<strong>${customer.full_name}</strong> - <span style="color:#6B7280;">${customer.identification}</span>${discountTag}`;
                                 div.classList.add('nav-item');
                                 div.style.color = '#1E1B2E';
+                                div.style.padding = '8px 12px';
+                                div.style.borderBottom = '1px solid #F3F4F8';
                                 div.style.cursor = 'pointer';
                                 div.addEventListener('click', function() {
                                     selectCustomer(customer);
@@ -187,7 +235,12 @@
                                 customerList.appendChild(div);
                             });
                         } else {
-                            customerList.style.display = 'none';
+                            if (isTodayFilterActive) {
+                                customerList.innerHTML = '<div style="padding:10px; font-size:12px; color:#9CA3AF; text-align:center;">No hay clientes agendados para hoy.</div>';
+                                customerList.style.display = 'block';
+                            } else {
+                                customerList.style.display = 'none';
+                            }
                         }
                     });
             } else {
@@ -283,7 +336,26 @@
         function selectCustomer(customer) {
             document.getElementById('customer_search').value = `${customer.full_name} - ${customer.identification}`;
             document.getElementById('customer_id').value = customer.id;
+            document.getElementById('route_id').value = customer.route_id || '';
             document.getElementById('customer_list').style.display = 'none';
+
+            // Descuento comercial
+            selectedCustomerDiscount = parseFloat(customer.discount_rate) || 0;
+            const discountBadge = document.getElementById('customer_discount_badge');
+            const discountVal = document.getElementById('customer_discount_val');
+
+            if (selectedCustomerDiscount > 0) {
+                discountVal.textContent = selectedCustomerDiscount;
+                discountBadge.style.display = 'block';
+            } else {
+                discountBadge.style.display = 'none';
+            }
+
+            // Si hay un producto abierto en selección, refrescar precios
+            if (selectedProduct) {
+                showProductDetails(selectedProduct);
+            }
+
             saveDraft();
         }
 
@@ -366,7 +438,13 @@
             let firstPriceFound = false;
             prices.forEach((p) => {
                 if (p.value > 0) {
-                    const priceWithTax = p.value * (1 + (taxRate / 100));
+                    const originalBase = p.value;
+                    const discountFactor = selectedCustomerDiscount > 0 ? (1 - (selectedCustomerDiscount / 100)) : 1;
+                    const effectiveBase = parseFloat((originalBase * discountFactor).toFixed(2));
+
+                    const priceWithTax = effectiveBase * (1 + (taxRate / 100));
+                    const originalWithTax = originalBase * (1 + (taxRate / 100));
+
                     const label = document.createElement('label');
                     label.style.display = 'flex';
                     label.style.alignItems = 'center';
@@ -376,9 +454,16 @@
                     label.style.borderRadius = '8px';
                     label.style.cursor = 'pointer';
                     label.style.fontSize = '13px';
+
+                    let discountTag = '';
+                    if (selectedCustomerDiscount > 0) {
+                        discountTag = `<span style="text-decoration:line-through;color:#9CA3AF;font-size:11px;margin-right:6px;">$${originalWithTax.toLocaleString('es-CO')}</span>
+                                       <span style="background:#ECFDF5;color:#059669;font-size:10px;font-weight:bold;padding:1px 5px;border-radius:4px;margin-right:6px;">-${selectedCustomerDiscount}%</span>`;
+                    }
+
                     label.innerHTML = `
-                        <input type="radio" name="selected_price_radio" value="${p.value}" ${!firstPriceFound ? 'checked' : ''}>
-                        <span>${p.label}: <strong>$${priceWithTax.toLocaleString('es-CO')}</strong></span>
+                        <input type="radio" name="selected_price_radio" value="${effectiveBase}" ${!firstPriceFound ? 'checked' : ''}>
+                        <span>${p.label}: ${discountTag}<strong>$${priceWithTax.toLocaleString('es-CO')}</strong></span>
                     `;
                     priceOptions.appendChild(label);
                     firstPriceFound = true;

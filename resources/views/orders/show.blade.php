@@ -12,14 +12,17 @@
                         {{ $order->products->count() }} producto(s)
                     </div>
                 </div>
-                <div style="display:flex;gap:8px;">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <a href="{{ route('warehouse.review', $order->id) }}" class="btn-primary" style="background:#4F46E5; font-size:13px; display:inline-flex; align-items:center; gap:6px;">
+                        🔍 Auditar y Sustituir en Bodega
+                    </a>
                     <a href="{{ route('reports.order.pdf', $order->id) }}" class="btn-primary" style="font-size:13px;">
                         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/>
                         </svg>
                         Descargar PDF
                     </a>
-                    @if($order->status !== 'facturado')
+                    @if(!in_array(strtoupper($order->status), ['FACTURADO', 'ANULADO']))
                         <a href="{{ route('orders.edit', $order->id) }}" class="btn-edit">Editar</a>
                     @endif
                     <a href="{{ route('orders.index') }}" class="btn-secondary">← Volver</a>
@@ -91,7 +94,36 @@
                         <span style="color:#6C3DE0;">${{ number_format($order->total, 0, ',', '.') }}</span>
                     </div>
                 </div>
+            {{-- Trazabilidad de Auditoría --}}
+            @if($order->audits && $order->audits->isNotEmpty())
+            <div style="margin-top:24px; padding-top:20px; border-top:2px solid #F3F4F8;">
+                <div style="font-size:14px; font-weight:700; color:#1E1B2E; margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+                    <span>🛡️ Sustituciones y Auditoría en Bodega ({{ $order->audits->count() }})</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    @foreach($order->audits as $audit)
+                    <div style="padding:10px 14px; border-radius:8px; background:#F8FAFC; border:1px solid #E2E8F0; font-size:12px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                            <span style="font-weight:700; color:#4F46E5;">{{ $audit->action_type }}</span>
+                            <span style="color:#64748B;">{{ $audit->created_at->format('d/m/Y H:i') }} por {{ $audit->user->name ?? 'Auditor' }}</span>
+                        </div>
+                        <div>
+                            @if($audit->action_type === 'SUBSTITUTE')
+                                Cambiado {{ $audit->original_quantity }} und de <em>{{ $audit->originalProduct->name ?? 'Producto' }}</em> por <strong>{{ $audit->new_quantity }} und de {{ $audit->newProduct->name ?? 'Producto' }}</strong>.
+                            @elseif($audit->action_type === 'REMOVE')
+                                Eliminado {{ $audit->original_quantity }} und de <em>{{ $audit->originalProduct->name ?? 'Producto' }}</em> por falta de stock.
+                            @else
+                                Cantidad ajustada de {{ $audit->original_quantity }} a {{ $audit->new_quantity }}.
+                            @endif
+                        </div>
+                        @if($audit->notes)
+                            <div style="color:#64748B; margin-top:2px; font-style:italic;">Motivo: "{{ $audit->notes }}"</div>
+                        @endif
+                    </div>
+                    @endforeach
+                </div>
             </div>
+            @endif
         </div>
 
         {{-- ── INFO LATERAL ─────────────────────────────────────── --}}

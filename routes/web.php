@@ -57,10 +57,25 @@ Route::middleware('auth')->group(function () {
     Route::get('/reports/orders/pdf', [ReportController::class, 'exportPdf'])->name('reports.orders.pdf');
     Route::get('/reports/orders/{order}/pdf', [ReportController::class, 'orderPdf'])->name('reports.order.pdf');
 
+    // ── Módulo de Bodega y Auditoría de Pedidos ──────────────
+    Route::get('/warehouse', [\App\Http\Controllers\WarehouseController::class, 'index'])->name('warehouse.index');
+    Route::get('/warehouse/orders/{id}/review', [\App\Http\Controllers\WarehouseController::class, 'review'])->name('warehouse.review');
+    Route::post('/warehouse/orders/{id}/status', [\App\Http\Controllers\WarehouseController::class, 'updateStatus'])->name('warehouse.update-status');
+
     // ── Configuración de alertas por empresa (Admin + Supervisor) ─
     Route::patch('/companies/{company}/alert-days', [CompanyController::class, 'updateAlertDays'])
         ->name('companies.update-alert-days');
 });
+
+// ──────────────────────────────────────────────────────────────
+// PORTAL B2B DE CLIENTES (Acceso Web Externo)
+// ──────────────────────────────────────────────────────────────
+Route::get('/b2b/login', [\App\Http\Controllers\CustomerB2BController::class, 'loginForm'])->name('b2b.login');
+Route::post('/b2b/login', [\App\Http\Controllers\CustomerB2BController::class, 'login'])->name('b2b.login.post');
+Route::get('/b2b/portal', [\App\Http\Controllers\CustomerB2BController::class, 'portal'])->name('b2b.portal');
+Route::post('/b2b/order', [\App\Http\Controllers\CustomerB2BController::class, 'storeOrder'])->name('b2b.order.store');
+Route::post('/b2b/logout', [\App\Http\Controllers\CustomerB2BController::class, 'logout'])->name('b2b.logout');
+
 
 // ──────────────────────────────────────────────────────────────
 // APIs de productos y ubicaciones (sin auth requerida — para integración con Nodo POS)

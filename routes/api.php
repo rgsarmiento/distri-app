@@ -28,3 +28,4 @@ Route::post('customer-details/create-customers', [CustomerDetailController::clas
 Route::get('/orders/search/{companyId}/{status?}', [OrderController::class, 'downloadOrders']);
 Route::get('/orders/update/{orderId}', [OrderController::class, 'updateOrderStatus']);
 Route::post('/orders/update-multiple', [OrderController::class, 'updateMultipleOrderStatus']);
+Route::post('/orders/{id}/substitute-item', [OrderController::class, 'substituteItem']);

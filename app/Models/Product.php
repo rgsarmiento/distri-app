@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Traits\BelongsToCompany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToCompany;
 
     protected $fillable = [
         'name',
@@ -20,6 +21,16 @@ class Product extends Model
         'company_id',
         'stock',
         'min_stock',
+    ];
+
+    protected $casts = [
+        'base_price'   => 'decimal:2',
+        'base_price_1' => 'decimal:2',
+        'base_price_2' => 'decimal:2',
+        'base_price_3' => 'decimal:2',
+        'tax_rate'     => 'decimal:2',
+        'stock'        => 'decimal:2',
+        'min_stock'    => 'decimal:2',
     ];
 
     /**
@@ -42,8 +53,8 @@ class Product extends Model
     public function orders()
     {
         return $this->belongsToMany(Order::class, 'order_products')
-                    ->withPivot('quantity', 'subtotal', 'total_tax', 'total')
-                    ->withTimestamps();
+            ->withPivot('quantity', 'subtotal', 'total_tax', 'total', 'price_final')
+            ->withTimestamps();
     }
 
     public function company()

@@ -30,6 +30,9 @@
                         <x-nav-link :href="route('orders.index')" :active="request()->routeIs('orders.index')">
                             {{ __('Órdenes') }}
                         </x-nav-link>
+                        <x-nav-link :href="route('warehouse.index')" :active="request()->routeIs('warehouse.*')">
+                            {{ __('Bodega') }}
+                        </x-nav-link>
                     @endif
 
                     <!-- Supervisor (role_id = 3) -->
@@ -43,6 +46,9 @@
                         <x-nav-link :href="route('orders.index')" :active="request()->routeIs('orders.index')">
                             {{ __('Órdenes') }}
                         </x-nav-link>
+                        <x-nav-link :href="route('warehouse.index')" :active="request()->routeIs('warehouse.*')">
+                            {{ __('Bodega') }}
+                        </x-nav-link>
                     @endif
 
                     <!-- Distribuidor (role_id = 2) -->
@@ -52,6 +58,9 @@
                         </x-nav-link>
                         <x-nav-link :href="route('orders.index')" :active="request()->routeIs('orders.index')">
                             {{ __('Órdenes') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('warehouse.index')" :active="request()->routeIs('warehouse.*')">
+                            {{ __('Bodega') }}
                         </x-nav-link>
                     @endif
                 </div>
@@ -131,9 +140,13 @@
                     {{ __('Clientes') }}
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('orders.index')" :active="request()->routeIs('orders.index')">
-                    {{ __('Orders') }}
+                    {{ __('Órdenes') }}
                 </x-responsive-nav-link>
             @endif
+
+            <x-responsive-nav-link :href="route('warehouse.index')" :active="request()->routeIs('warehouse.*')">
+                {{ __('Bodega y Alistamiento') }}
+            </x-responsive-nav-link>
         </div>
 
         <!-- Responsive Settings Options -->

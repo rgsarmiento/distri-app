@@ -55,4 +55,15 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Company::class);
     }
+
+    public function assignedCustomers()
+    {
+        return $this->belongsToMany(CustomerDetail::class, 'customer_user', 'user_id', 'customer_id')
+            ->withTimestamps();
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
 }
