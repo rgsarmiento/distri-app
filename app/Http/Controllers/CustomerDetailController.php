@@ -164,25 +164,72 @@ class CustomerDetailController extends Controller
             $inserted = 0;
             $updated = 0;
 
-            // Tomar el array de clientes desde el request
-            $customers = $request->input('customers', []);
+            // Extraer el payload JSON o form-data
+            $raw = $request->json()->all();
+            if (empty($raw)) {
+                $raw = $request->all();
+            }
+
+            // Si se envió un string JSON dentro de un campo 'customers' o 'data'
+            if (is_string($request->input('customers'))) {
+                $decoded = json_decode($request->input('customers'), true);
+                if (is_array($decoded)) {
+                    $raw = $decoded;
+                }
+            }
+
+            $customers = [];
+
+            if (is_array($raw)) {
+                if (isset($raw['customers']) && is_array($raw['customers'])) {
+                    // Formato: { "customers": [ {...}, ... ] }
+                    $customers = $raw['customers'];
+                } elseif (isset($raw['data']) && is_array($raw['data'])) {
+                    // Formato: { "data": [ {...}, ... ] }
+                    $customers = $raw['data'];
+                } elseif (isset($raw['identification']) || isset($raw['full_name'])) {
+                    // Formato: { "identification": "...", "full_name": "...", ... } (un solo cliente)
+                    $customers = [$raw];
+                } elseif (!empty($raw) && isset($raw[0]) && is_array($raw[0])) {
+                    // Formato: [ { "identification": "...", ... }, ... ] (array directo)
+                    $customers = $raw;
+                }
+            }
+
+            if (empty($customers)) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'No se recibieron datos de clientes para procesar. El cuerpo de la petición debe contener un cliente o lista de clientes.'
+                ], 400);
+            }
 
             \Illuminate\Support\Facades\DB::transaction(function () use ($customers, &$inserted, &$updated) {
                 foreach ($customers as $customer) {
+                    if (!is_array($customer)) {
+                        continue;
+                    }
+
+                    $identification = trim((string)($customer['identification'] ?? ''));
+                    if ($identification === '') {
+                        continue; // No procesar registros sin documento o código
+                    }
+
                     $companyId = $customer['company_id'] ?? null;
                     if (!$companyId && auth()->check()) {
                         $companyId = auth()->user()->company_id;
                     }
 
+                    $routeId = isset($customer['route_id']) && $customer['route_id'] !== '' ? (int)$customer['route_id'] : 0;
+
                     $customerData = [
-                        'identification'  => $customer['identification'],
-                        'full_name'       => $customer['full_name'],
-                        'email'           => $customer['email'] ?? ($customer['identification'] . '@cliente.local'),
-                        'phone'           => $customer['phone'] ?? '0',
-                        'address'         => $customer['address'] ?? 'No registrada',
+                        'identification'  => $identification,
+                        'full_name'       => trim((string)($customer['full_name'] ?? 'Cliente Sin Nombre')),
+                        'email'           => !empty($customer['email']) ? trim((string)$customer['email']) : ($identification . '@cliente.local'),
+                        'phone'           => !empty($customer['phone']) ? trim((string)$customer['phone']) : '-',
+                        'address'         => !empty($customer['address']) ? trim((string)$customer['address']) : '-',
                         'company_id'      => $companyId,
-                        'municipality'    => $customer['municipality'] ?? null,
-                        'route_id'        => $customer['route_id'] ?? null,
+                        'municipality'    => !empty($customer['municipality']) ? trim((string)$customer['municipality']) : null,
+                        'route_id'        => $routeId,
                         'visit_monday'    => filter_var($customer['visit_monday'] ?? false, FILTER_VALIDATE_BOOLEAN),
                         'visit_tuesday'   => filter_var($customer['visit_tuesday'] ?? false, FILTER_VALIDATE_BOOLEAN),
                         'visit_wednesday' => filter_var($customer['visit_wednesday'] ?? false, FILTER_VALIDATE_BOOLEAN),
@@ -191,13 +238,16 @@ class CustomerDetailController extends Controller
                         'visit_saturday'  => filter_var($customer['visit_saturday'] ?? false, FILTER_VALIDATE_BOOLEAN),
                         'visit_sunday'    => filter_var($customer['visit_sunday'] ?? false, FILTER_VALIDATE_BOOLEAN),
                         'web_access'      => filter_var($customer['web_access'] ?? false, FILTER_VALIDATE_BOOLEAN),
-                        'web_user'        => $customer['web_user'] ?? null,
-                        'web_password'    => !empty($customer['web_password']) ? bcrypt($customer['web_password']) : null,
+                        'web_user'        => !empty($customer['web_user']) ? trim((string)$customer['web_user']) : null,
                         'discount_rate'   => (float) ($customer['discount_rate'] ?? 0),
                         'updated_at'      => now(),
                     ];
 
-                    $existingCustomer = CustomerDetail::where('identification', $customer['identification'])
+                    if (!empty($customer['web_password'])) {
+                        $customerData['web_password'] = bcrypt($customer['web_password']);
+                    }
+
+                    $existingCustomer = CustomerDetail::where('identification', $identification)
                         ->where('company_id', $companyId)
                         ->first();
 
@@ -215,13 +265,17 @@ class CustomerDetailController extends Controller
                         $inserted++;
                     }
 
-                    // Sincronizar vendedores asignados (seller_ids o user_ids)
+                    // Sincronizar vendedores asignados evitando violaciones de foreign key
                     $sellerIds = $customer['seller_ids'] ?? ($customer['user_ids'] ?? null);
                     if ($sellerIds !== null) {
                         $sellerIds = is_array($sellerIds) ? $sellerIds : [$sellerIds];
-                        $targetCustomer->sellers()->sync($sellerIds);
+                        $validUserIds = \App\Models\User::whereIn('id', $sellerIds)->pluck('id')->all();
+                        $targetCustomer->sellers()->sync($validUserIds);
                     } elseif (!empty($customer['seller_id'])) {
-                        $targetCustomer->sellers()->sync([$customer['seller_id']]);
+                        $userExists = \App\Models\User::where('id', $customer['seller_id'])->exists();
+                        if ($userExists) {
+                            $targetCustomer->sellers()->sync([$customer['seller_id']]);
+                        }
                     }
                 }
             });
