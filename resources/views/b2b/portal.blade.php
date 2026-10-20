@@ -149,18 +149,31 @@
             border: 1px solid #E5E7EB;
         }
 
+        .stepper {
+            display: flex;
+            align-items: center;
+            background: #F3F4F6;
+            border-radius: 10px;
+            padding: 3px;
+            border: 1.5px solid #E5E7EB;
+        }
+
         .stepper button {
             background: #ffffff;
             border: none;
-            width: 28px;
-            height: 28px;
-            border-radius: 6px;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
             font-weight: 800;
-            font-size: 14px;
+            font-size: 16px;
             color: #4B5563;
             cursor: pointer;
             box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-            transition: background 0.1s;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
         }
 
         .stepper button:hover {
@@ -168,15 +181,28 @@
             color: #6C3DE0;
         }
 
+        .stepper button:active {
+            transform: scale(0.92);
+        }
+
         .stepper input {
-            width: 40px;
+            width: 50px;
+            height: 32px;
             text-align: center;
-            background: transparent;
-            border: none;
-            font-weight: 700;
-            font-size: 13px;
+            background: #ffffff;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            font-weight: 800;
+            font-size: 14px;
             color: #1E1B2E;
             outline: none;
+            margin: 0 3px;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        .stepper input:focus {
+            border-color: #6C3DE0;
+            box-shadow: 0 0 0 2px rgba(108,61,224,0.15);
         }
 
         /* ── BOTONES ───────────────────────────────────── */
@@ -468,15 +494,15 @@
                                         <div>
                                             @if($product->stock > 10)
                                                 <span style="font-size:11px; font-weight:700; color:#059669; background:#ECFDF5; padding:2px 8px; border-radius:6px;">
-                                                    ● {{ $product->stock }} disp.
+                                                    ● {{ (int)$product->stock }} disp.
                                                 </span>
                                             @elseif($product->stock > 0)
                                                 <span style="font-size:11px; font-weight:700; color:#D97706; background:#FEF3C7; padding:2px 8px; border-radius:6px;">
-                                                    ⚠️ Bajo stock ({{ $product->stock }})
+                                                    ⚠️ {{ (int)$product->stock }} disp.
                                                 </span>
                                             @else
-                                                <span style="font-size:11px; font-weight:700; color:#DC2626; background:#FEE2E2; padding:2px 8px; border-radius:6px;">
-                                                    Agotado
+                                                <span style="font-size:11px; font-weight:700; color:#059669; background:#ECFDF5; padding:2px 8px; border-radius:6px;">
+                                                    ● Disponible
                                                 </span>
                                             @endif
                                         </div>
@@ -515,12 +541,18 @@
                                 {{-- Controles de Adición --}}
                                 <div style="display:flex; gap:8px; align-items:center;">
                                     <div class="stepper">
-                                        <button type="button" onclick="decrementLocalQty({{ $product->id }})">-</button>
-                                        <input type="number" id="qty_{{ $product->id }}" value="1" min="1" max="{{ max(1, $product->stock) }}">
-                                        <button type="button" onclick="incrementLocalQty({{ $product->id }})">+</button>
+                                        <button type="button" onclick="decrementLocalQty({{ $product->id }})" title="Disminuir cantidad">-</button>
+                                        <input type="number" 
+                                               id="qty_{{ $product->id }}" 
+                                               value="1" 
+                                               min="1" 
+                                               oninput="if(this.value < 1 && this.value !== '') this.value = 1;"
+                                               title="Ingresa la cantidad deseada">
+                                        <button type="button" onclick="incrementLocalQty({{ $product->id }})" title="Aumentar cantidad">+</button>
                                     </div>
 
                                     <button type="button" 
+                                            id="btn_add_{{ $product->id }}"
                                             onclick="addLocalToCart({{ $product->id }}, '{{ addslashes($product->name) }}', '{{ $product->code }}', {{ $finalPriceWithTax }}, {{ $originalPriceWithTax }})" 
                                             class="btn-add-cart">
                                         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -875,9 +907,8 @@
         function incrementLocalQty(productId) {
             const input = document.getElementById('qty_' + productId);
             if (input) {
-                const current = parseInt(input.value) || 1;
-                const max = parseInt(input.max) || 9999;
-                if (current < max) input.value = current + 1;
+                const current = parseInt(input.value) || 0;
+                input.value = current + 1;
             }
         }
 
@@ -885,13 +916,15 @@
             const input = document.getElementById('qty_' + productId);
             if (input) {
                 const current = parseInt(input.value) || 1;
-                if (current > 1) input.value = current - 1;
+                if (current > 1) {
+                    input.value = current - 1;
+                }
             }
         }
 
         function addLocalToCart(id, name, code, finalPrice, originalPrice) {
             const input = document.getElementById('qty_' + id);
-            const qtyToAdd = input ? (parseInt(input.value) || 1) : 1;
+            const qtyToAdd = input ? Math.max(1, parseInt(input.value) || 1) : 1;
 
             if (cart[id]) {
                 cart[id].qty += qtyToAdd;
@@ -899,10 +932,21 @@
                 cart[id] = { id, name, code, price: finalPrice, originalPrice: originalPrice, qty: qtyToAdd };
             }
 
-            if (input) input.value = 1;
             renderCart();
 
-            // Animación / Feedback rápido
+            // Animación y confirmación en el botón
+            const btn = document.getElementById('btn_add_' + id);
+            if (btn) {
+                const originalBg = '#6C3DE0';
+                btn.style.background = '#059669';
+                btn.innerHTML = `<span>✓ Agregado (${cart[id].qty})</span>`;
+                setTimeout(() => {
+                    btn.style.background = originalBg;
+                    btn.innerHTML = `<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg><span>+ Agregar más</span>`;
+                }, 1400);
+            }
+
+            // Animación en el badge del carrito
             const badge = document.getElementById('cart_badge');
             if (badge) {
                 badge.style.transform = 'scale(1.25)';
