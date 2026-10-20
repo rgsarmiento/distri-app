@@ -10,6 +10,16 @@
             <form method="POST" action="{{ route('companies.update', $company->id) }}">
                 @csrf
                 @method('PUT')
+
+                <div style="background:#F5F3FF;border:1px solid #DDD6FE;border-radius:8px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;">
+                    <div>
+                        <div style="font-size:12px;font-weight:700;color:#6C3DE0;text-transform:uppercase;letter-spacing:0.5px;">Identificador de Sincronización</div>
+                        <div style="font-size:13px;color:#4B5563;margin-top:2px;">Utiliza este ID en Nodo ERP o la aplicación de transmisión:</div>
+                    </div>
+                    <span style="font-family:monospace;font-size:16px;font-weight:800;background:#6C3DE0;color:#fff;padding:4px 12px;border-radius:6px;">
+                        ID: {{ $company->id }}
+                    </span>
+                </div>
             
                 <!-- NIT -->
                 <div>

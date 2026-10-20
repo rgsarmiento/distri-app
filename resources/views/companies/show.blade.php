@@ -15,6 +15,10 @@
                 </div>
                 <div class="border-t border-gray-200 p-4">
                     <dl>
+                        <div class="bg-indigo-50 px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 border-b border-indigo-100">
+                            <dt class="text-sm font-semibold text-indigo-900">ID de Empresa (Nodo ERP / API)</dt>
+                            <dd class="mt-1 text-base font-bold text-indigo-700 sm:mt-0 sm:col-span-2 font-mono">#{{ $company->id }}</dd>
+                        </div>
                         <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                             <dt class="text-sm font-medium text-gray-500">NIT</dt>
                             <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $company->nit }}</dd>

@@ -6,7 +6,7 @@
             <div>
                 <div style="font-size:15px;font-weight:700;color:#1E1B2E;">Listado de Empresas</div>
                 <div style="font-size:12px;color:#9CA3AF;margin-top:2px;">
-                    Configuración de empresas y parámetros de alertas
+                    Configuración de empresas y parámetros de alertas (utilice el <strong>ID</strong> para vincular la app de transmisión con Nodo ERP)
                 </div>
             </div>
             <a href="{{ route('companies.create') }}" class="btn-primary">
@@ -21,6 +21,7 @@
             <table class="data-table">
                 <thead>
                     <tr>
+                        <th style="text-align:center;width:90px;">ID</th>
                         <th>Nombre</th>
                         <th>NIT</th>
                         <th>Teléfono</th>
@@ -32,8 +33,13 @@
                 <tbody>
                     @foreach($companies as $company)
                     <tr>
+                        <td style="text-align:center;">
+                            <span style="font-family:monospace;font-weight:800;font-size:13px;background:#EDE9FE;color:#6C3DE0;padding:4px 10px;border-radius:6px;border:1px solid #DDD6FE;display:inline-block;" title="ID de empresa para conectar con Nodo ERP / API">
+                                {{ $company->id }}
+                            </span>
+                        </td>
                         <td>
-                            <div style="font-weight:700;color:#6C3DE0;">{{ $company->name }}</div>
+                            <div style="font-weight:700;color:#1E1B2E;">{{ $company->name }}</div>
                         </td>
                         <td style="color:#6B7280;">{{ $company->nit }}</td>
                         <td>{{ $company->phone }}</td>
