@@ -95,7 +95,7 @@ class Order extends Model
             'separator:id,name',
             'reviewer:id,name',
             'debugger:id,name',
-            'products:id,name,code,base_price,tax_rate,company_id,stock',
+            'products:id,name,code,base_price,base_price_1,tax_rate,company_id,stock',
             'audits.originalProduct:id,name,code',
             'audits.newProduct:id,name,code',
             'audits.user:id,name',

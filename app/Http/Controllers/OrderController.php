@@ -363,7 +363,7 @@ class OrderController extends Controller
             'separator:id,name',
             'reviewer:id,name',
             'debugger:id,name',
-            'products:id,name,code,tax_rate,company_id,base_price,stock',
+            'products:id,name,code,tax_rate,company_id,base_price,base_price_1,stock',
             'audits.originalProduct:id,name,code',
             'audits.newProduct:id,name,code',
             'audits.user:id,name',
