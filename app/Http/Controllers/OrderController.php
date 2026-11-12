@@ -427,6 +427,14 @@ class OrderController extends Controller
                         ? (float) $product->pivot->price_final
                         : ($product->pivot->quantity > 0 ? (float) ($product->pivot->subtotal / $product->pivot->quantity) : 0);
 
+                    $lineTotal = (float) $product->pivot->total > 0
+                        ? (float) $product->pivot->total
+                        : (float) ($product->pivot->subtotal + $product->pivot->total_tax);
+
+                    if ($lineTotal <= 0 && $product->pivot->quantity > 0) {
+                        $lineTotal = round($basePrice * (float) $product->pivot->quantity, 2);
+                    }
+
                     // Trazabilidad de sustituciones para este producto
                     $productAudits = $audits->filter(function ($audit) use ($product) {
                         return $audit->original_product_id == $product->id || $audit->new_product_id == $product->id;
@@ -439,7 +447,7 @@ class OrderController extends Controller
                         'quantity'            => (float) $product->pivot->quantity,
                         'base_price_selected' => (float) number_format($basePrice, 2, '.', ''),
                         'tax_rate'            => (float) $product->tax_rate,
-                        'total_price'         => (float) number_format((float) $product->pivot->total, 2, '.', ''),
+                        'total_price'         => (float) number_format($lineTotal, 2, '.', ''),
                         'subtotal'            => (float) number_format((float) $product->pivot->subtotal, 2, '.', ''),
                         'total_tax'           => (float) number_format((float) $product->pivot->total_tax, 2, '.', ''),
                         'company_id'          => $product->company_id,
