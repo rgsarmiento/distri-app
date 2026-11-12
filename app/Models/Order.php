@@ -26,6 +26,9 @@ class Order extends Model
     protected $fillable = [
         'company_id',
         'user_id',
+        'separator_id',
+        'reviewer_id',
+        'debugger_id',
         'customer_id',
         'route_id',
         'payment_term',
@@ -33,18 +36,35 @@ class Order extends Model
         'total_tax',
         'total',
         'status',
+        'invoiced_at',
         'observations',
     ];
 
     protected $casts = [
-        'subtotal'  => 'decimal:2',
-        'total_tax' => 'decimal:2',
-        'total'     => 'decimal:2',
+        'subtotal'    => 'decimal:2',
+        'total_tax'   => 'decimal:2',
+        'total'       => 'decimal:2',
+        'invoiced_at' => 'datetime',
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function separator()
+    {
+        return $this->belongsTo(User::class, 'separator_id');
+    }
+
+    public function reviewer()
+    {
+        return $this->belongsTo(User::class, 'reviewer_id');
+    }
+
+    public function debugger()
+    {
+        return $this->belongsTo(User::class, 'debugger_id');
     }
 
     public function customer()
@@ -72,7 +92,10 @@ class Order extends Model
         return $query->with([
             'customer:id,full_name,identification,address,phone,route_id,discount_rate,company_id',
             'user:id,name,email,company_id',
-            'products:id,name,code,base_price,base_price_1,tax_rate,company_id,stock',
+            'separator:id,name',
+            'reviewer:id,name',
+            'debugger:id,name',
+            'products:id,name,code,base_price,tax_rate,company_id,stock',
             'audits.originalProduct:id,name,code',
             'audits.newProduct:id,name,code',
             'audits.user:id,name',

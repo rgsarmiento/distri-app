@@ -62,6 +62,9 @@ class WarehouseController extends Controller
         $order = Order::with([
             'customer',
             'user',
+            'separator',
+            'reviewer',
+            'debugger',
             'products',
             'audits.originalProduct',
             'audits.newProduct',
@@ -91,11 +94,24 @@ class WarehouseController extends Controller
 
         $order = Order::findOrFail($id);
         $newStatus = strtoupper($request->status);
+        $userId = Auth::id();
 
-        $order->update([
+        $updateData = [
             'status'     => $newStatus,
             'updated_at' => now(),
-        ]);
+        ];
+
+        if ($newStatus === Order::STATUS_SEPARADO) {
+            $updateData['separator_id'] = $userId ?: $order->separator_id;
+        } elseif ($newStatus === Order::STATUS_REVISADO) {
+            $updateData['reviewer_id'] = $userId ?: $order->reviewer_id;
+        } elseif ($newStatus === Order::STATUS_DEPURADO) {
+            $updateData['debugger_id'] = $userId ?: $order->debugger_id;
+        } elseif ($newStatus === Order::STATUS_FACTURADO) {
+            $updateData['invoiced_at'] = now();
+        }
+
+        $order->update($updateData);
 
         $messages = [
             'SEPARADO'  => 'El pedido ha sido marcado como SEPARADO (en alistamiento).',

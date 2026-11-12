@@ -175,19 +175,22 @@ class OrderSubstitutionService
                 ->selectRaw('COALESCE(SUM(subtotal), 0) as subtotal, COALESCE(SUM(total_tax), 0) as total_tax, COALESCE(SUM(total), 0) as total')
                 ->first();
 
+            $effectiveUserId = $userId ?: (auth()->id() ?? $order->user_id);
+
             $order->update([
-                'subtotal'  => $aggregates->subtotal,
-                'total_tax' => $aggregates->total_tax,
-                'total'     => $aggregates->total,
-                'status'    => ($order->status === Order::STATUS_CRUDO || $order->status === Order::STATUS_SEPARADO) 
+                'subtotal'    => $aggregates->subtotal,
+                'total_tax'   => $aggregates->total_tax,
+                'total'       => $aggregates->total,
+                'status'      => ($order->status === Order::STATUS_CRUDO || $order->status === Order::STATUS_SEPARADO) 
                     ? Order::STATUS_REVISADO 
                     : $order->status,
+                'reviewer_id' => $order->reviewer_id ?: $effectiveUserId,
             ]);
 
             // 4. Registrar auditoría con trazabilidad completa
             $audit = OrderItemAudit::create([
                 'order_id'            => $order->id,
-                'user_id'             => $userId ?: (auth()->id() ?? $order->user_id),
+                'user_id'             => $effectiveUserId,
                 'original_product_id' => $originalProductId,
                 'original_quantity'   => $originalQuantity,
                 'new_product_id'      => $newProductId,

@@ -137,11 +137,37 @@
                     Estado del Pedido
                 </div>
                 <div style="display:flex;align-items:center;gap:10px;">
-                    <span style="width:10px;height:10px;border-radius:50%;background:{{ $order->status === 'facturado' ? '#10B981' : '#F59E0B' }};"></span>
-                    <span style="font-size:15px;font-weight:700;color:#1E1B2E;">{{ ucfirst($order->status) }}</span>
+                    <span style="width:10px;height:10px;border-radius:50%;background:{{ strtoupper($order->status) === 'FACTURADO' ? '#10B981' : '#F59E0B' }};"></span>
+                    <span style="font-size:15px;font-weight:700;color:#1E1B2E;">{{ strtoupper($order->status) }}</span>
                 </div>
                 <div style="font-size:11px;color:#9CA3AF;margin-top:8px;">
                     Creado: {{ $order->created_at->format('d/m/Y — H:i') }}
+                </div>
+                @if($order->invoiced_at)
+                <div style="font-size:11px;color:#059669;margin-top:4px;font-weight:600;">
+                    Facturado: {{ $order->invoiced_at->format('d/m/Y — H:i') }}
+                </div>
+                @endif
+            </div>
+
+            {{-- Trazabilidad de Alistamiento --}}
+            <div class="card" style="padding:20px;">
+                <div style="font-size:13px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">
+                    Operadores de Alistamiento
+                </div>
+                <div style="display:flex; flex-direction:column; gap:10px; font-size:12px;">
+                    <div>
+                        <span style="color:#6B7280; display:block;">📦 Separador / Bodega:</span>
+                        <strong style="color:#1E1B2E;">{{ $order->separator->name ?? 'No asignado' }}</strong>
+                    </div>
+                    <div>
+                        <span style="color:#6B7280; display:block;">🔍 Revisor / Auditor:</span>
+                        <strong style="color:#1E1B2E;">{{ $order->reviewer->name ?? ($order->audits->first()?->user->name ?? 'No asignado') }}</strong>
+                    </div>
+                    <div>
+                        <span style="color:#6B7280; display:block;">🚀 Depurador (Listo ERP):</span>
+                        <strong style="color:#1E1B2E;">{{ $order->debugger->name ?? 'No asignado' }}</strong>
+                    </div>
                 </div>
             </div>
 

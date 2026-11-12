@@ -81,6 +81,9 @@ class OrderController extends Controller
         $order->load([
             'customer',
             'user',
+            'separator',
+            'reviewer',
+            'debugger',
             'products',
             'audits.originalProduct',
             'audits.newProduct',
@@ -302,7 +305,7 @@ class OrderController extends Controller
 
     /**
      * API: Búsqueda y descarga de pedidos optimizada para sincronización con Nodo ERP
-     * GET /api/orders/search/{company_id}/{status}?user_id=X&route_id=Y&date_from=YYYY-MM-DD&date_to=YYYY-MM-DD
+     * GET /api/orders/search/{company_id}/{status}?from=YYYY-MM-DD&to=YYYY-MM-DD&status=XXX
      */
     public function downloadOrders(Request $request, $companyId, $status = null)
     {
@@ -312,41 +315,55 @@ class OrderController extends Controller
                   ->orWhereHas('user', fn($uq) => $uq->where('company_id', $companyId));
             });
 
-        // Filtrado por estado
-        if ($status !== null && strtoupper($status) !== 'ALL') {
-            if ($status === '0' || strtolower($status) === 'pendiente' || strtoupper($status) === Order::STATUS_CRUDO) {
-                $query->whereIn('orders.status', [Order::STATUS_CRUDO, 'pendiente']);
-            } elseif ($status === '1' || strtolower($status) === 'facturado' || strtoupper($status) === Order::STATUS_FACTURADO) {
-                $query->whereIn('orders.status', [Order::STATUS_FACTURADO, 'facturado']);
-            } else {
-                $query->where('orders.status', strtoupper($status));
+        // ── 1. Filtrado por Estado (query param o parámetro de ruta) ────────
+        $statusParam = $request->query('status');
+        $effectiveStatus = ($statusParam !== null && $statusParam !== '') ? $statusParam : $status;
+
+        if ($effectiveStatus !== null && $effectiveStatus !== '') {
+            $upperStatus = strtoupper(trim($effectiveStatus));
+            if (!in_array($upperStatus, ['TODOS', 'ALL', '0'])) {
+                if ($upperStatus === 'PENDIENTE') {
+                    $query->whereIn('orders.status', [Order::STATUS_CRUDO, 'pendiente']);
+                } elseif ($upperStatus === 'FACTURADO' || $upperStatus === '1') {
+                    $query->whereIn('orders.status', [Order::STATUS_FACTURADO, 'facturado']);
+                } else {
+                    $query->where('orders.status', $upperStatus);
+                }
             }
         }
 
-        // Parámetros opcionales de consulta
+        // ── 2. Filtrado por Rango de Fechas (from / to o date_from / date_to) ─
+        $from = $request->query('from') ?: $request->query('date_from');
+        $to   = $request->query('to') ?: $request->query('date_to');
+
+        if ($from) {
+            $query->where('orders.created_at', '>=', trim($from) . ' 00:00:00');
+        }
+        if ($to) {
+            $query->where('orders.created_at', '<=', trim($to) . ' 23:59:59');
+        }
+
+        // Si no se especifica rango de fechas, traer últimos 60 días para agilidad máxima
+        if (!$from && !$to) {
+            $query->where('orders.created_at', '>=', now()->subDays(60));
+        }
+
+        // ── 3. Parámetros opcionales adicionales (user_id, route_id) ─────────
         if ($request->filled('user_id')) {
             $query->where('orders.user_id', $request->query('user_id'));
         }
         if ($request->filled('route_id')) {
             $query->where('orders.route_id', $request->query('route_id'));
         }
-        if ($request->filled('date_from')) {
-            $query->whereDate('orders.created_at', '>=', $request->query('date_from'));
-        }
-        if ($request->filled('date_to')) {
-            $query->whereDate('orders.created_at', '<=', $request->query('date_to'));
-        }
 
-        // Si no se especifica rango de fechas, traer últimos 60 días para agilidad máxima
-        if (!$request->filled('date_from') && !$request->filled('date_to')) {
-            $query->where('orders.created_at', '>=', now()->subDays(60));
-        }
-
-        // Eager Loading estricto sin problema N+1
+        // ── 4. Eager Loading estricto sin problema N+1 ──────────────────────
         $orders = $query->with([
             'customer:id,full_name,identification,address,phone,route_id,discount_rate',
             'user:id,name,email',
-            'products:id,name,code,tax_rate,company_id,base_price,base_price_1,stock',
+            'separator:id,name',
+            'reviewer:id,name',
+            'debugger:id,name',
+            'products:id,name,code,tax_rate,company_id,base_price,stock',
             'audits.originalProduct:id,name,code',
             'audits.newProduct:id,name,code',
             'audits.user:id,name',
@@ -354,16 +371,39 @@ class OrderController extends Controller
         ->orderBy('orders.created_at', 'asc')
         ->get();
 
-        // Formato estructurado para Nodo ERP
+        // ── 5. Formato estructurado para Nodo ERP con trazabilidad ──────────
         $formattedOrders = $orders->map(function ($order) {
             $audits = $order->audits ?? collect();
 
+            // Trazabilidad de operadores
+            $separator = $order->separator ? [
+                'id'   => $order->separator->id,
+                'name' => $order->separator->name,
+            ] : null;
+
+            // Revisor: relación directa o auditor de sustituciones si existe
+            $reviewerUser = $order->reviewer ?? ($audits->first()?->user ?? null);
+            $reviewer = $reviewerUser ? [
+                'id'   => $reviewerUser->id,
+                'name' => $reviewerUser->name,
+            ] : null;
+
+            $debugger = $order->debugger ? [
+                'id'   => $order->debugger->id,
+                'name' => $order->debugger->name,
+            ] : null;
+
             return [
                 'document'      => $order->id,
+                'creation_date' => $order->created_at ? $order->created_at->format('Y-m-d H:i:s') : null,
+                'status'        => $order->status,
+                'total'         => number_format((float) $order->total, 2, '.', ''),
+                'subtotal'      => number_format((float) $order->subtotal, 2, '.', ''),
+                'total_tax'     => number_format((float) $order->total_tax, 2, '.', ''),
+                'observations'  => $order->observations ?: '',
                 'company_id'    => $order->company_id,
                 'route_id'      => $order->route_id,
                 'payment_term'  => $order->payment_term ?: Order::PAYMENT_CONTADO,
-                'status'        => $order->status,
                 'customer'      => [
                     'id'             => $order->customer->id ?? null,
                     'identification' => $order->customer->identification ?? '',
@@ -378,9 +418,9 @@ class OrderController extends Controller
                     'name'  => $order->user->name ?? '',
                     'email' => $order->user->email ?? '',
                 ],
-                'subtotal'      => (float) $order->subtotal,
-                'total_tax'     => (float) $order->total_tax,
-                'total'         => (float) $order->total,
+                'separator'     => $separator,
+                'reviewer'      => $reviewer,
+                'debugger'      => $debugger,
                 'has_audits'    => $audits->isNotEmpty(),
                 'products'      => $order->products->map(function ($product) use ($audits) {
                     $basePrice = $product->pivot->price_final > 0
@@ -394,14 +434,14 @@ class OrderController extends Controller
 
                     return [
                         'id'                  => $product->id,
-                        'name'                => $product->name,
                         'code'                => $product->code,
+                        'name'                => $product->name,
                         'quantity'            => (float) $product->pivot->quantity,
-                        'base_price_selected' => $basePrice,
+                        'base_price_selected' => (float) number_format($basePrice, 2, '.', ''),
                         'tax_rate'            => (float) $product->tax_rate,
-                        'subtotal'            => (float) $product->pivot->subtotal,
-                        'total_tax'           => (float) $product->pivot->total_tax,
-                        'total_price'         => (float) $product->pivot->total,
+                        'total_price'         => (float) number_format((float) $product->pivot->total, 2, '.', ''),
+                        'subtotal'            => (float) number_format((float) $product->pivot->subtotal, 2, '.', ''),
+                        'total_tax'           => (float) number_format((float) $product->pivot->total_tax, 2, '.', ''),
                         'company_id'          => $product->company_id,
                         'has_substitution'    => $productAudits->isNotEmpty(),
                         'substitution_audits' => $productAudits->map(fn($a) => [
@@ -417,8 +457,6 @@ class OrderController extends Controller
                         ])->values(),
                     ];
                 }),
-                'observations'  => $order->observations,
-                'creation_date' => $order->created_at ? $order->created_at->toDateTimeString() : null,
                 'created_at'    => $order->created_at ? $order->created_at->toIso8601String() : null,
             ];
         });
@@ -427,29 +465,71 @@ class OrderController extends Controller
     }
 
     /**
-     * API: Actualización del estado de un solo pedido
+     * API: Actualización del estado de un solo pedido (fallback individual)
+     * GET /api/orders/update/{orderId}
      */
     public function updateOrderStatus($orderId)
     {
-        $order = Order::findOrFail($orderId);
-        $order->update(['status' => Order::STATUS_FACTURADO]);
-        return response()->json(['message' => 'Estado de la orden actualizado a FACTURADO']);
+        $order = Order::with('products')->find($orderId);
+
+        if (!$order) {
+            return response()->json([
+                'success' => false,
+                'message' => "La orden #{$orderId} no fue encontrada."
+            ], 404);
+        }
+
+        DB::transaction(function () use ($order) {
+            // Descontar inventario si no estaba facturada
+            if (!in_array(strtoupper($order->status), [Order::STATUS_FACTURADO, 'facturado'])) {
+                foreach ($order->products as $product) {
+                    $product->decrement('stock', $product->pivot->quantity);
+                }
+            }
+
+            $order->update([
+                'status'      => Order::STATUS_FACTURADO,
+                'invoiced_at' => now(),
+                'updated_at'  => now(),
+            ]);
+        });
+
+        return response()->json([
+            'success'     => true,
+            'message'     => 'Estado de la orden actualizado a FACTURADO exitosamente.',
+            'order_id'    => (int) $order->id,
+            'status'      => Order::STATUS_FACTURADO,
+            'invoiced_at' => now()->toDateTimeString(),
+        ], 200);
     }
 
     /**
      * API: Actualización masiva de estado en una sola transacción SQL
      * POST /api/orders/update-multiple
+     * Body: { "order_ids": [1045, 1046, 1047] }
      */
     public function updateMultipleOrderStatus(Request $request)
     {
-        $orderIds = $request->input('order_ids', []);
+        $rawOrderIds = $request->input('order_ids', []);
         $targetStatus = strtoupper($request->input('status', Order::STATUS_FACTURADO));
 
-        if (empty($orderIds) || !is_array($orderIds)) {
-            return response()->json(['message' => 'No se proporcionaron IDs de orden válidos.'], 400);
+        if (empty($rawOrderIds) || !is_array($rawOrderIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se proporcionaron IDs de orden válidos.'
+            ], 400);
         }
 
-        DB::transaction(function () use ($orderIds, $targetStatus) {
+        $orderIds = array_values(array_filter(array_map('intval', $rawOrderIds)));
+
+        if (empty($orderIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El array order_ids está vacío o no contiene IDs numéricos válidos.'
+            ], 400);
+        }
+
+        $updatedCount = DB::transaction(function () use ($orderIds, $targetStatus) {
             // Si el estado pasa a FACTURADO, actualizar stock de productos que aún no se hayan descargado
             if ($targetStatus === Order::STATUS_FACTURADO) {
                 $orders = Order::whereIn('id', $orderIds)
@@ -464,15 +544,22 @@ class OrderController extends Controller
                 }
             }
 
-            Order::whereIn('id', $orderIds)->update([
+            $updateData = [
                 'status'     => $targetStatus,
                 'updated_at' => now(),
-            ]);
+            ];
+
+            if ($targetStatus === Order::STATUS_FACTURADO) {
+                $updateData['invoiced_at'] = now();
+            }
+
+            return Order::whereIn('id', $orderIds)->update($updateData);
         });
 
         return response()->json([
-            'status'  => true,
-            'message' => "Se actualizaron " . count($orderIds) . " pedidos al estado {$targetStatus} correctamente."
+            'success'       => true,
+            'message'       => "Órdenes actualizadas a {$targetStatus} exitosamente.",
+            'updated_count' => $updatedCount
         ], 200);
     }
 

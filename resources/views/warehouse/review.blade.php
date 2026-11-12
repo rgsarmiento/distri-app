@@ -55,6 +55,18 @@
                     🎯 Descuento Cliente: {{ $order->customer->discount_rate }}%
                 </div>
                 @endif
+
+                <div style="margin-top:8px; font-size:11px; color:#6B7280; display:flex; flex-direction:column; gap:3px;">
+                    @if($order->separator)
+                        <div>📦 Separó: <strong style="color:#1E1B2E;">{{ $order->separator->name }}</strong></div>
+                    @endif
+                    @if($order->reviewer || $order->audits->isNotEmpty())
+                        <div>🔍 Revisó: <strong style="color:#1E1B2E;">{{ $order->reviewer->name ?? $order->audits->first()->user->name }}</strong></div>
+                    @endif
+                    @if($order->debugger)
+                        <div>🚀 Depuró: <strong style="color:#1E1B2E;">{{ $order->debugger->name }}</strong></div>
+                    @endif
+                </div>
             </div>
 
             {{-- Botones de cambio de estado paso a paso --}}
