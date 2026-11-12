@@ -309,11 +309,13 @@ class OrderController extends Controller
      */
     public function downloadOrders(Request $request, $companyId, $status = null)
     {
-        $query = Order::query()
-            ->where(function ($q) use ($companyId) {
+        $query = Order::query();
+        if ($companyId && $companyId != '0') {
+            $query->where(function ($q) use ($companyId) {
                 $q->where('orders.company_id', $companyId)
                   ->orWhereHas('user', fn($uq) => $uq->where('company_id', $companyId));
             });
+        }
 
         // ── 1. Filtrado por Estado (query param o parámetro de ruta) ────────
         $statusParam = $request->query('status');
@@ -322,12 +324,15 @@ class OrderController extends Controller
         if ($effectiveStatus !== null && $effectiveStatus !== '') {
             $upperStatus = strtoupper(trim($effectiveStatus));
             if (!in_array($upperStatus, ['TODOS', 'ALL', '0'])) {
-                if ($upperStatus === 'PENDIENTE') {
-                    $query->whereIn('orders.status', [Order::STATUS_CRUDO, 'pendiente']);
+                if ($upperStatus === 'PENDIENTE' || $upperStatus === 'CRUDO') {
+                    $query->whereIn('orders.status', [Order::STATUS_CRUDO, 'pendiente', 'crudo', 'CRUDO']);
                 } elseif ($upperStatus === 'FACTURADO' || $upperStatus === '1') {
-                    $query->whereIn('orders.status', [Order::STATUS_FACTURADO, 'facturado']);
+                    $query->whereIn('orders.status', [Order::STATUS_FACTURADO, 'facturado', 'FACTURADO']);
                 } else {
-                    $query->where('orders.status', $upperStatus);
+                    $query->where(function($sq) use ($upperStatus) {
+                        $sq->where('orders.status', $upperStatus)
+                           ->orWhere('orders.status', strtolower($upperStatus));
+                    });
                 }
             }
         }
@@ -341,11 +346,6 @@ class OrderController extends Controller
         }
         if ($to) {
             $query->where('orders.created_at', '<=', trim($to) . ' 23:59:59');
-        }
-
-        // Si no se especifica rango de fechas, traer últimos 60 días para agilidad máxima
-        if (!$from && !$to) {
-            $query->where('orders.created_at', '>=', now()->subDays(60));
         }
 
         // ── 3. Parámetros opcionales adicionales (user_id, route_id) ─────────

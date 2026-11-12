@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Role extends Model
 {
-    protected $fillable = ['name'];
+    protected $fillable = ['id', 'name'];
 
     // Un rol tiene muchos usuarios
     public function users()
