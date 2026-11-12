@@ -21,6 +21,15 @@
                 </label>
             </div>
 
+            <div style="min-width:180px;">
+                <label class="form-label">Estado</label>
+                <select name="status" class="form-input" style="padding-top:7px;padding-bottom:7px;" onchange="this.form.submit()">
+                    <option value="">Todos los Estados</option>
+                    <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Habilitados (Precio > 0)</option>
+                    <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inhabilitados (Precio $0)</option>
+                </select>
+            </div>
+
             <div style="display:flex;gap:8px;">
                 <button type="submit" class="btn-primary">
                     <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -78,13 +87,17 @@
                         </td>
                         <td style="text-align:center;color:#9CA3AF;">{{ number_format($product->min_stock, 1) }}</td>
                         <td style="text-align:center;">
-                            @if($product->stock <= $product->min_stock)
+                            @if(!$product->is_active || ($product->base_price_1 !== null && (float)$product->base_price_1 <= 0 && (float)$product->base_price <= 0))
+                                <span style="background:#F3F4F6;color:#4B5563;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;text-transform:uppercase;border:1px solid #D1D5DB;" title="Inhabilitado para nuevos pedidos (precio $0)">
+                                    Inhabilitado
+                                </span>
+                            @elseif($product->stock <= $product->min_stock)
                                 <span style="background:#FEE2E2;color:#991B1B;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;text-transform:uppercase;border:1px solid #FCA5A5;">
-                                    Bajo
+                                    Stock Bajo
                                 </span>
                             @else
                                 <span style="background:#D1FAE5;color:#065F46;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;text-transform:uppercase;">
-                                    OK
+                                    Activo
                                 </span>
                             @endif
                         </td>

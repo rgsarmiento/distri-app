@@ -19,7 +19,7 @@ class DashboardController extends Controller
         // Alertas de stock bajo
         $lowStockProducts = [];
         if ($user->role_id === 1 || $user->role_id === 3) {
-            $lowStockQuery = Product::lowStock();
+            $lowStockQuery = Product::active()->lowStock();
             if ($user->role_id === 3) {
                 $lowStockQuery->where('company_id', $user->company_id);
             }

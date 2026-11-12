@@ -75,8 +75,9 @@ class WarehouseController extends Controller
             abort(403, 'No tienes permiso para auditar órdenes de otra empresa.');
         }
 
-        // Catálogo de productos disponibles de la empresa para sustitución
-        $availableProducts = Product::when($order->company_id, fn($q) => $q->where('company_id', $order->company_id))
+        // Catálogo de productos disponibles y habilitados de la empresa para sustitución
+        $availableProducts = Product::active()
+            ->when($order->company_id, fn($q) => $q->where('company_id', $order->company_id))
             ->orderBy('name')
             ->get(['id', 'name', 'code', 'base_price', 'base_price_1', 'tax_rate', 'stock']);
 

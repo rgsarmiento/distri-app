@@ -98,7 +98,7 @@ class OrderController extends Controller
         $user = Auth::user();
         $companyId = $user->company_id;
 
-        $products = Product::when($companyId && $user->role_id !== 1, function ($q) use ($companyId) {
+        $products = Product::active()->when($companyId && $user->role_id !== 1, function ($q) use ($companyId) {
             $q->where('company_id', $companyId);
         })->get();
 
@@ -153,7 +153,7 @@ class OrderController extends Controller
             $totalTax = 0;
 
             foreach ($request->products as $index => $productId) {
-                $product   = Product::findOrFail($productId);
+                $product   = Product::active()->findOrFail($productId);
                 $quantity  = (float) $request->quantities[$index];
                 $basePrice = (float) $request->base_prices[$index];
 

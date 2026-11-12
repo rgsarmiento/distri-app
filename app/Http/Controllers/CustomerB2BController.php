@@ -70,8 +70,9 @@ class CustomerB2BController extends Controller
 
         $customer = CustomerDetail::with(['company', 'sellers'])->findOrFail($customerId);
 
-        // Catálogo de productos de su empresa con stock
-        $products = Product::where('company_id', $customer->company_id)
+        // Catálogo de productos de su empresa habilitados y con base_price_1 > 0
+        $products = Product::active()
+            ->where('company_id', $customer->company_id)
             ->orderBy('name')
             ->get();
 
@@ -132,7 +133,7 @@ class CustomerB2BController extends Controller
             $totalTax = 0;
 
             foreach ($request->products as $index => $productId) {
-                $product  = Product::findOrFail($productId);
+                $product  = Product::active()->findOrFail($productId);
                 $quantity = (float) $request->quantities[$index];
 
                 // Aplicar el descuento comercial al precio base

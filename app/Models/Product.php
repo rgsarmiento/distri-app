@@ -21,6 +21,7 @@ class Product extends Model
         'company_id',
         'stock',
         'min_stock',
+        'is_active',
     ];
 
     protected $casts = [
@@ -31,6 +32,7 @@ class Product extends Model
         'tax_rate'     => 'decimal:2',
         'stock'        => 'decimal:2',
         'min_stock'    => 'decimal:2',
+        'is_active'    => 'boolean',
     ];
 
     /**
@@ -40,6 +42,22 @@ class Product extends Model
     {
         $price = $this->base_price_1 ?: $this->base_price;
         return $price * (1 + ($this->tax_rate / 100));
+    }
+
+    /**
+     * Scope para productos activos y habilitados para venta/pedidos.
+     * Solo productos con is_active = true y base_price_1 > 0 (o base_price > 0).
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true)
+            ->where(function ($q) {
+                $q->where('base_price_1', '>', 0)
+                  ->orWhere(function ($sq) {
+                      $sq->whereNull('base_price_1')
+                         ->where('base_price', '>', 0);
+                  });
+            });
     }
 
     /**
