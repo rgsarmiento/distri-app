@@ -5,8 +5,11 @@ use App\Models\CustomerDetail;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+
+uses(DatabaseTransactions::class);
 
 function createTestCompany(): Company {
     return Company::create([
