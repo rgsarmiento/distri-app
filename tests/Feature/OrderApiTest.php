@@ -255,5 +255,17 @@ it('returns null for unassigned operators and correctly responds with 404/400 on
     $res400 = $this->postJson("/api/orders/update-multiple", ['order_ids' => []]);
     $res400->assertStatus(400)
         ->assertJson(['success' => false]);
+
+    // 400 en search cuando no se envía company_id o se envía 0 sin allow_all
+    $resSearchNoCompany = $this->getJson("/api/orders/search");
+    $resSearchNoCompany->assertStatus(400)
+        ->assertJsonStructure(['error', 'hint']);
+
+    $resSearchZero = $this->getJson("/api/orders/search/0");
+    $resSearchZero->assertStatus(400);
+
+    // Consulta pasando company_id por query string
+    $resQueryParam = $this->getJson("/api/orders/search?company_id={$company->id}");
+    $resQueryParam->assertStatus(200);
 });
 

@@ -307,14 +307,28 @@ class OrderController extends Controller
      * API: Búsqueda y descarga de pedidos optimizada para sincronización con Nodo ERP
      * GET /api/orders/search/{company_id}/{status}?from=YYYY-MM-DD&to=YYYY-MM-DD&status=XXX
      */
-    public function downloadOrders(Request $request, $companyId, $status = null)
+    public function downloadOrders(Request $request, $companyId = null, $status = null)
     {
+        // ── 0. Obtener y validar company_id (desde ruta o query param ?company_id= / ?company=)
+        $effectiveCompanyId = $companyId ?: $request->query('company_id') ?: $request->query('company');
+
+        // Si se llama sin company_id o con '0' / 'TODOS'
+        if (!$effectiveCompanyId || $effectiveCompanyId == '0' || strtoupper($effectiveCompanyId) === 'TODOS' || strtoupper($effectiveCompanyId) === 'ALL') {
+            // Solo permitir ver todas las empresas si se especifica explícitamente allow_all=1 (ej. reportes globales del superadmin)
+            if (!$request->boolean('allow_all')) {
+                return response()->json([
+                    'error'   => 'Debe especificar un company_id válido para consultar los pedidos de su empresa.',
+                    'hint'    => 'Uso: GET /api/orders/search/{company_id}/{status?} o ?company_id={id}',
+                ], 400);
+            }
+            $effectiveCompanyId = null;
+        }
+
         $query = Order::query();
-        if ($companyId && $companyId != '0') {
-            $query->where(function ($q) use ($companyId) {
-                $q->where('orders.company_id', $companyId)
-                  ->orWhereHas('user', fn($uq) => $uq->where('company_id', $companyId));
-            });
+
+        // Filtrado estricto por empresa
+        if ($effectiveCompanyId) {
+            $query->where('orders.company_id', $effectiveCompanyId);
         }
 
         // ── 1. Filtrado por Estado (query param o parámetro de ruta) ────────
