@@ -18,6 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
             '/products/get',
             '/api/*', // Excluir todas las rutas de API
         ]);
+
+        // Resolver dinámicamente la conexión si la empresa está aislada en BD dedicada
+        $middleware->append(\App\Http\Middleware\ResolveTenantDatabase::class);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
