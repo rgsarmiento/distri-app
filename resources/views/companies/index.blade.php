@@ -17,6 +17,28 @@
             </a>
         </div>
 
+        {{-- ── GUÍA RÁPIDA DE AISLAMIENTO Y MIGRACIÓN MULTI-TENANT ── --}}
+        <div style="background:#F8FAFC;border-bottom:1px solid #E2E8F0;padding:12px 24px;font-size:12px;color:#475569;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+            <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;">
+                <span style="font-weight:700;color:#1E293B;display:inline-flex;align-items:center;gap:4px;">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                    </svg>
+                    Comando de Aislamiento:
+                </span>
+                <span>Automático:</span>
+                <code style="background:#EDE9FE;color:#6C3DE0;padding:2px 7px;border-radius:4px;font-weight:700;font-family:monospace;">php artisan tenant:isolate {ID}</code>
+                <span>Personalizado:</span>
+                <code style="background:#EDE9FE;color:#6C3DE0;padding:2px 7px;border-radius:4px;font-weight:700;font-family:monospace;">php artisan tenant:isolate {ID} --database=mi_bd</code>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+                <span style="color:#64748B;">Migrar todas:</span>
+                <code style="background:#E2E8F0;color:#0F172A;padding:2px 7px;border-radius:4px;font-weight:700;font-family:monospace;">php artisan tenants:migrate</code>
+            </div>
+        </div>
+
         <div style="overflow-x:auto;">
             <table class="data-table">
                 <thead>
