@@ -26,6 +26,7 @@
                         <th>NIT</th>
                         <th>Teléfono</th>
                         <th>Ubicación</th>
+                        <th style="text-align:center;">Base de Datos</th>
                         <th style="text-align:center;">Días de Alerta</th>
                         <th style="text-align:center;">Acciones</th>
                     </tr>
@@ -44,6 +45,27 @@
                         <td style="color:#6B7280;">{{ $company->nit }}</td>
                         <td>{{ $company->phone }}</td>
                         <td style="font-size:12px;">{{ $company->municipality }}, {{ $company->department }}</td>
+                        <td style="text-align:center;">
+                            @if($company->hasDedicatedDatabase())
+                                <span style="background:#ECFDF5;color:#065F46;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;border:1px solid #A7F3D0;display:inline-flex;align-items:center;gap:5px;" title="Base de Datos Independiente: {{ $company->db_database }}">
+                                    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                                        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                                    </svg>
+                                    Dedicada ({{ $company->db_database }})
+                                </span>
+                            @else
+                                <span style="background:#F3F4F6;color:#6B7280;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;border:1px solid #E5E7EB;display:inline-flex;align-items:center;gap:5px;" title="Base de datos central compartida (distri_app)">
+                                    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                        <line x1="8" y1="21" x2="16" y2="21"></line>
+                                        <line x1="12" y1="17" x2="12" y2="21"></line>
+                                    </svg>
+                                    Compartida
+                                </span>
+                            @endif
+                        </td>
                         <td style="text-align:center;">
                             <span style="background:#FEF3C7;color:#92400E;padding:3px 10px;border-radius:6px;font-weight:700;font-size:12px;">
                                 {{ $company->alert_days }} días

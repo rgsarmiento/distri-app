@@ -21,7 +21,7 @@ class CompanyController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'nit'          => 'required|unique:companies',
             'name'         => 'required',
             'phone'        => 'required',
@@ -29,9 +29,10 @@ class CompanyController extends Controller
             'department'   => 'required',
             'municipality' => 'required',
             'alert_days'   => 'nullable|integer|min:1|max:365',
+            'db_database'  => 'nullable|string|max:100',
         ]);
 
-        Company::create($request->all());
+        Company::create($validated);
 
         $this->flashNotification('success', 'Empresa Creada', 'La empresa ha sido creada exitosamente.');
         return redirect()->route('companies.index');
@@ -59,6 +60,7 @@ class CompanyController extends Controller
             'department'   => 'required',
             'municipality' => 'required',
             'alert_days'   => 'nullable|integer|min:1|max:365',
+            'db_database'  => 'nullable|string|max:100',
         ]);
 
         $company->update($validated);
